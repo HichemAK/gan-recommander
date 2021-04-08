@@ -55,7 +55,7 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self, num_items, num_hidden_layers):
         super().__init__()
-        self.mlp_tower = nn.Sequential(nn.Linear(2*num_items, 1024), nn.ReLU(True), nn.Linear(1000, 512), nn.ReLU(True),
+        self.mlp_tower = nn.Sequential(nn.Linear(2*num_items, 1024), nn.ReLU(True), nn.Linear(1024, 512), nn.ReLU(True),
                                        nn.Linear(512, 256), nn.ReLU(True), nn.Linear(256, 1))
 
     def forward(self, generator_output, item_full):
