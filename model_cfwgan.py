@@ -3,7 +3,9 @@ import torch
 import math
 import itertools
 
-class LinearTower(nn.Module):
+class MLPTower(nn.Module):
+    """Tower-shaped MLP.
+    Example : MLPTower(16, 2, 3) would give you a network 16-8-4-2-2 with ReLu after each layer except for last one"""
     def __init__(self, input_size, output_size, num_hidden_layers):
         super().__init__()
         c = 2**math.floor(math.log2(input_size))
