@@ -27,7 +27,7 @@ class MovieLensDataset(Dataset):
             idx = idx.tolist()
 
         sample = self.matrix[idx]
-        sample = np.array(sample.toarray())
+        sample = torch.tensor(sample.toarray()).float()
 
         if self.transform:
             sample = self.transform(sample)
