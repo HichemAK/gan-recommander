@@ -63,7 +63,7 @@ class Discriminator(nn.Module):
 
 
 class CFWGAN(pl.LightningModule):
-    def __init__(self, num_items, g_steps, d_steps):
+    def __init__(self, num_items, alpha, beta, g_steps, d_steps):
         super().__init__()
         self.generator = Generator(num_items, 128, 3)
         self.discriminator = Discriminator(num_items, 3)
