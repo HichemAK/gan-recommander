@@ -21,7 +21,7 @@ class MyTestCase(unittest.TestCase):
     def test_generator(self):
         model = Generator(50, 60, 3)
         x = torch.tensor(np.random.rand(8, 50)).float()
-        out = model(x, x)
+        out = model(x)
         self.assertEqual(out.shape, (8, 50))
 
     def test_discriminator(self):
