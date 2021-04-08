@@ -22,6 +22,8 @@ class MLPTower(nn.Module):
         return self.sequential(x)
 
 class RepeatMLP(nn.Module):
+    """Repeat-shaped MLP.
+        Example : RepeatMLP(16, 8, 12, 3) would give you a network 16-12-12-12-8 with ReLu after each layer except for last one"""
     def __init__(self, input_size, output_size, hidden_size, num_hidden_layers):
         super().__init__()
         l = [(nn.Linear(hidden_size, hidden_size), nn.ReLU(True)) for _ in range(num_hidden_layers-1)]
