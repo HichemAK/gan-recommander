@@ -55,7 +55,8 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self, num_items, num_hidden_layers):
         super().__init__()
-        self.mlp_tower = MLPTower(2 * num_items, 1, num_hidden_layers)
+        self.mlp_tower = nn.Sequential(nn.Linear(2*num_items, 1024), nn.ReLU(True), nn.Linear(1000, 512), nn.ReLU(True),
+                                       nn.Linear(512, 256), nn.ReLU(True), nn.Linear(256, 1))
 
     def forward(self, generator_output, item_full):
         x = torch.cat([generator_output, item_full], dim=-1)
@@ -122,8 +123,8 @@ class CFWGAN(pl.LightningModule):
         items = batch
         generator_output = self.generator(self.negative_sampling(items))
         items_rank = torch.argsort(generator_output, dim=-1)
-        items_rank = items_rank[:, 5]
-        items = [set([x for x,y in enumerate(items[i]) if x == 1]) for i in range(items.shape[0])]
+        items_rank = items_rank[:, :5]
+        items = [set([x for x,y in enumerate(items[i]) if y == 1]) for i in range(items.shape[0])]
         precision_at_5 = sum([len(items[i].intersection(items_rank[i])) / 5 for i in range(len(items))]) / len(items)
         tqdm_dict = {'precision_at_5': precision_at_5}
         output = OrderedDict({
