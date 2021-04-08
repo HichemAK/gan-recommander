@@ -47,6 +47,7 @@ class Generator(nn.Module):
 
 class Discriminator(nn.Module):
     def __init__(self, num_items, num_hidden_layers):
+        super().__init__()
         self.mlp_tower = MLPTower(2*num_items, 1, num_hidden_layers)
 
     def forward(self, generator_output, item_full):

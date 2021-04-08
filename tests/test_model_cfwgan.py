@@ -1,5 +1,5 @@
 import unittest
-from model_cfwgan import MLPTower, MLPRepeat
+from model_cfwgan import MLPTower, MLPRepeat, Generator, Discriminator
 import torch
 import numpy as np
 
@@ -17,6 +17,18 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(out.shape, (5, 8))
         l = [(x.in_features, x.out_features) for x in model.sequential if isinstance(x, torch.nn.Linear)]
         self.assertEqual(l, [(16, 12), (12, 12), (12, 12), (12, 8)])
+
+    def test_generator(self):
+        model = Generator(50, 60, 3)
+        x = torch.tensor(np.random.rand(8, 50)).float()
+        out = model(x, x)
+        self.assertEqual(out.shape, (8, 50))
+
+    def test_discriminator(self):
+        model = Discriminator(50, 3)
+        x = torch.tensor(np.random.rand(8, 50)).float()
+        out = model(x, x)
+        self.assertEqual(out.shape, (8, 1))
 
 
 if __name__ == '__main__':
