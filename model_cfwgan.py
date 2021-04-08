@@ -21,7 +21,7 @@ class MLPTower(nn.Module):
     def forward(self, x):
         return self.sequential(x)
 
-class RepeatMLP(nn.Module):
+class MLPRepeat(nn.Module):
     """Repeat-shaped MLP.
         Example : RepeatMLP(16, 8, 12, 3) would give you a network 16-12-12-12-8 with ReLu after each layer except for last one"""
     def __init__(self, input_size, output_size, hidden_size, num_hidden_layers):
@@ -37,8 +37,18 @@ class RepeatMLP(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, num_items, num_layers):
+    def __init__(self, num_items, hidden_size, num_hidden_layers):
         super().__init__()
-        self.num_items = num_items
-        c = math.floor(math.log2(num_items))
-        l = [nn.Linear()]
+        self.mlp_repeat = MLPRepeat(2 * num_items, num_items, hidden_size, num_hidden_layers)
+
+    def forward(self, item_neg_sample, item_full):
+        x = torch.cat([item_neg_sample, item_full], dim=-1)
+        return self.mlp_repeat(x)
+
+class Discriminator(nn.Module):
+    def __init__(self, num_items, num_hidden_layers):
+        self.mlp_tower = MLPTower(2*num_items, 1, num_hidden_layers)
+
+    def forward(self, generator_output, item_full):
+        x = torch.cat([generator_output, item_full], dim=-1)
+        return self.mlp_tower(x)
