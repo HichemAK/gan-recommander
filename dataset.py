@@ -6,7 +6,6 @@ import numpy as np
 import scipy.sparse as sparse
 
 class MovieLensDataset(Dataset):
-
     def __init__(self, csv_file, transform=None):
         """
         Args:
