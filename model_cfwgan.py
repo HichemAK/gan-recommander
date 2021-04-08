@@ -139,15 +139,15 @@ class CFWGAN(pl.LightningModule):
         opt_d = torch.optim.Adam(self.discriminator.parameters())
         return [opt_g, opt_d], []
 
-    def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_idx, optimizer_closure, on_tpu, using_native_amp,
-                      using_lbfgs):
-        # update generator opt every 2 steps
-        if optimizer_idx == 0:
-            if batch_idx % 2 == 0 :
-                optimizer.step(closure=optimizer_closure)
-                optimizer.zero_grad()
-        # update discriminator opt every 4 steps
-        if optimizer_idx == 1:
-            if batch_idx % 4 == 0 :
-                optimizer.step(closure=optimizer_closure)
-                optimizer.zero_grad()
+    # def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_idx, optimizer_closure, on_tpu, using_native_amp,
+    #                   using_lbfgs):
+    #     # update generator opt every 2 steps
+    #     if optimizer_idx == 0:
+    #         if batch_idx % 2 == 0 :
+    #             optimizer.step(closure=optimizer_closure)
+    #             optimizer.zero_grad()
+    #     # update discriminator opt every 4 steps
+    #     elif optimizer_idx == 1:
+    #         if batch_idx % 4 == 0 :
+    #             optimizer.step(closure=optimizer_closure)
+    #             optimizer.zero_grad()
