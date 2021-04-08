@@ -63,7 +63,7 @@ class Discriminator(nn.Module):
 
 
 class CFWGAN(pl.LightningModule):
-    def __init__(self, num_items, alpha, beta, g_steps, d_steps):
+    def __init__(self, num_items, alpha=0.04, beta=0.04, g_steps=1, d_steps=1):
         super().__init__()
         self.generator = Generator(num_items, 128, 3)
         self.discriminator = Discriminator(num_items, 3)
@@ -71,23 +71,26 @@ class CFWGAN(pl.LightningModule):
         self.d_steps = d_steps
         self._g_steps = 0
         self._d_steps = 0
+        self.alpha = alpha
+        self.beta = beta
 
     def forward(self, item_full):
         x = self.generator(item_full)
         return x
 
-    def negative_sampling(self):
-        raise NotImplementedError
+    def negative_sampling(self, items):
+        # TODO : Implement negative sampling
+        return items
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         items = batch
 
-        clip_value = 0.01
+        # clip_value = 0.01
 
         # train generator
         if optimizer_idx == 0:
             # adversarial loss is binary cross-entropy
-            g_loss = -torch.mean(self.discriminator(self.generator(items), items))
+            g_loss = -torch.mean(self.discriminator(self.generator(self.negative_sampling(items)), items))
             tqdm_dict = {'g_loss': g_loss}
             output = OrderedDict({
                 'loss': g_loss,
@@ -101,10 +104,11 @@ class CFWGAN(pl.LightningModule):
 
         # discriminator loss is the average of these
         elif optimizer_idx == 1:
-            d_loss = -torch.mean(self.discriminator(items, items)) + torch.mean(self.discriminator(self.generator(items), items))
+            d_loss = -torch.mean(self.discriminator(items, items)) + \
+                     torch.mean(self.discriminator(self.generator(items), items))
 
-            for p in self.discriminator.parameters():
-                p.data.clamp_(-clip_value, clip_value)
+            # for p in self.discriminator.parameters():
+            #     p.data.clamp_(-clip_value, clip_value)
 
             tqdm_dict = {'d_loss': d_loss}
             output = OrderedDict({
@@ -113,6 +117,21 @@ class CFWGAN(pl.LightningModule):
                 'log': tqdm_dict
             })
             return output
+
+    def validation_step(self, batch, batch_idx):
+        items = batch
+        generator_output = self.generator(self.negative_sampling(items))
+        items_rank = torch.argsort(generator_output, dim=-1)
+        items_rank = items_rank[:, 5]
+        items = [set([x for x,y in enumerate(items[i]) if x == 1]) for i in range(items.shape[0])]
+        precision_at_5 = sum([len(items[i].intersection(items_rank[i])) / 5 for i in range(len(items))]) / len(items)
+        tqdm_dict = {'precision_at_5': precision_at_5}
+        output = OrderedDict({
+            'progress_bar': tqdm_dict,
+            'log': tqdm_dict
+        })
+        return output
+
 
     def configure_optimizers(self):
         opt_g = torch.optim.Adam(self.generator.parameters())
