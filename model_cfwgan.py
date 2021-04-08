@@ -21,6 +21,18 @@ class MLPTower(nn.Module):
     def forward(self, x):
         return self.sequential(x)
 
+class RepeatMLP(nn.Module):
+    def __init__(self, input_size, output_size, hidden_size, num_hidden_layers):
+        super().__init__()
+        l = [(nn.Linear(hidden_size, hidden_size), nn.ReLU(True)) for _ in range(num_hidden_layers-1)]
+        l.insert(0, (nn.Linear(input_size, hidden_size), nn.ReLU(True)))
+        l = list(itertools.chain(*l))
+        l.append(nn.Linear(hidden_size, output_size))
+        self.sequential = nn.Sequential(*l)
+
+    def forward(self, x):
+        return self.sequential(x)
+
 
 class Generator(nn.Module):
     def __init__(self, num_items, num_layers):
