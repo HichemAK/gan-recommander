@@ -20,7 +20,7 @@ class MovieLensDataset(Dataset):
         self.transform = transform
 
     def __len__(self):
-        return len(self.dataframe)
+        return self.user_count
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):

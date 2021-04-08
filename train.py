@@ -7,7 +7,7 @@ import pytorch_lightning as pl
 
 batch_size = 16
 
-dataset = MovieLensDataset('ml-latest-small/ratings.csv')
+dataset = MovieLensDataset('movielens/ml-latest-small/ratings.csv')
 train_size = int(len(dataset)*0.8)
 train, val = random_split(dataset, [train_size, len(dataset)-train_size], generator=torch.Generator().manual_seed(1234))
 
