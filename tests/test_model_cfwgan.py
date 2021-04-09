@@ -45,6 +45,36 @@ class MyTestCase(unittest.TestCase):
         precision = CFWGAN.precision_at_n(items_predicted, items, n=3)
         self.assertEqual(precision, (1 / 3 + 2 / 3 + 2 / 3) / 3)
 
+    def test_negative_sampling(self):
+        class Test:
+            def __init__(self, s_zr=0.6, s_pm=0.6):
+                self.s_zr = s_zr
+                self.s_pm = s_pm
+                self.negative_sampling = CFWGAN.negative_sampling
+        test = Test(s_zr=0.6, s_pm=0.6)
+        items = torch.tensor([[1,0,1,0,1,0,1,0,1,0],
+                              [0,0,0,0,0,1,1,1,1,1]])
+        zr, pm = test.negative_sampling(test, items)
+        for i in range(items.shape[0]):
+            self.assertEqual(zr[i].sum(), 3)
+            self.assertEqual(pm[i].sum(), 3)
+
+        test.s_pm = 0
+        test.s_zr = 0
+
+        zr, pm = test.negative_sampling(test, items)
+        for i in range(items.shape[0]):
+            self.assertEqual(zr[i].sum(), 0)
+            self.assertEqual(pm[i].sum(), 0)
+
+        test.s_pm = 1
+        test.s_zr = 1
+
+        zr, pm = test.negative_sampling(test, items)
+        for i in range(items.shape[0]):
+            self.assertEqual(zr[i].sum(), 5)
+            self.assertEqual(pm[i].sum(), 5)
+
 
 if __name__ == '__main__':
     unittest.main()
