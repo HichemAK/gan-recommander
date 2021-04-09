@@ -5,7 +5,7 @@ from model_cfwgan import CFWGAN
 
 class Recommender():
     def __init__(self, path_to_model=None, ratings_file=None, movies_file=None):
-        self.model = Recommender.load_model(path_to_model)
+        self.model = self.load_model(path_to_model)
         self.dataset = MovieLensDataset(ratings_file=ratings_file, movies_file=movies_file)
 
     def load_model(self, path):
