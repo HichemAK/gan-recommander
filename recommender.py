@@ -1,5 +1,5 @@
 import torch
-
+import numpy as np
 from dataset import MovieLensDataset
 
 class Recommender():
@@ -15,7 +15,20 @@ class Recommender():
     def generate(self, vector):
         return self.model.forward(torch.tensor(vector))
 
+    def filter_vector(self, input, output):
+        filtered = input * output
+        return filtered
+
+    def top_k(self, vector, k=1):
+        values = torch.sort(vector, descending=True)
+        string = self.dataset.get_movie_list_str(list(values[1].detach().numpy()[:k]))
+        top = list(values[0][:k].detach().numpy())
+        probs = ", ".join([str(t) for t in top])
+        return string + "\n\nprobs: [" + probs + "]"
+
     def vector_to_movies(self, vector):
-        filtered = [i*vector[i] for i in range(len(vector)) if vector[i] != 0]
+        filtered = [(i+1)*vector[i] for i in range(len(vector)) if vector[i] != 0]
+        filtered = list(np.array(filtered) - 1)
         filtered.reverse()
         return self.dataset.get_movie_list_str(filtered)
+
