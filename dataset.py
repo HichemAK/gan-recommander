@@ -6,14 +6,16 @@ import numpy as np
 import scipy.sparse as sparse
 
 class MovieLensDataset(Dataset):
-    def __init__(self, csv_file, transform=None):
+    def __init__(self, ratings_file=None, movies_file=None, transform=None):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.dataframe = MovieLensDataset.get_dataframe(csv_file)
+        self.movie_dict = {}
+        self.dataframe = MovieLensDataset.get_dataframe(ratings_file, movie_dict=self.movie_dict)
+        self.movies_dataframe = MovieLensDataset.get_movies_dataframe(movies_file)
         self.matrix = self.get_matrix()
         self.user_count = self.matrix.shape[0]
         self.item_count = self.matrix.shape[1]
@@ -35,14 +37,22 @@ class MovieLensDataset(Dataset):
         return sample
 
     @staticmethod
-    def get_dataframe(csv_file):
+    def get_movies_dataframe(csv_file=None):
+        if not os.path.isfile(csv_file):
+            raise FileNotFoundError("csv file not found")
+
+        df = pd.read_csv(csv_file)
+        return df
+
+    @staticmethod
+    def get_dataframe(csv_file, movie_dict=None):
         if not os.path.isfile(csv_file):
             raise FileNotFoundError("csv file not found")
 
         df = pd.read_csv(csv_file)
         df.drop("rating", 1, inplace=True)
         df.drop("timestamp", 1, inplace=True)
-        df["movieId"] = MovieLensDataset.remove_gaps(df["movieId"])
+        df["movieId"] = MovieLensDataset.remove_gaps(df["movieId"], movie_dict=movie_dict)
 
         def minusOne(x):
             return x - 1
@@ -53,10 +63,11 @@ class MovieLensDataset(Dataset):
         return df
 
     @staticmethod
-    def remove_gaps(pd_series, flip=False):
+    def remove_gaps(pd_series, movie_dict=None, flip=False):
         real_count = len(pd_series.unique())
 
         for i in range(1, real_count + 1):
+            movie_dict[i-1] = pd_series.max()
             pd_series.replace(pd_series.max(), i*(-1), inplace=True)
 
         def positify(x):
@@ -79,7 +90,24 @@ class MovieLensDataset(Dataset):
 
         return sparse.csr_matrix((data, (row, col)), shape=(user_count + 1, item_count + 1))
 
+    def get_movie(self, index):
+        real_id = self.movie_dict[index]
+        row = self.movies_dataframe[self.movies_dataframe["movieId"] == real_id]
+        title = row["title"].values[0]
+        genres = row["genres"].values[0]
+
+        ret = f"#{real_id}: {title} ===> {genres}"
+
+        return ret
+
+    def get_movie_list_str(self, indexes=None):
+        l = []
+
+        for i in indexes:
+            l.append(self.get_movie(i))
+
+        return "\n".join(l)
 
 if __name__ == "__main__":
-    ds = MovieLensDataset("movielens/ml-latest-small/ratings.csv")
+    ds = MovieLensDataset(ratings_file="movielens/ml-latest-small/ratings.csv", movies_file="movielens/ml-latest-small/movies.csv")
     print(ds[0])
