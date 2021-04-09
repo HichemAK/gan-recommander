@@ -86,7 +86,7 @@ class CFWGAN(pl.LightningModule):
     def training_step(self, batch, batch_idx, optimizer_idx):
         items = batch
 
-        # clip_value = 0.01
+        clip_value = 0.001
 
         # train generator
         if optimizer_idx == 0:
@@ -106,10 +106,10 @@ class CFWGAN(pl.LightningModule):
         # discriminator loss is the average of these
         elif optimizer_idx == 1:
             d_loss = -torch.mean(self.discriminator(items, items)) + \
-                     torch.mean(self.discriminator(self.generator(items), items))
+                     torch.mean(self.discriminator(self.generator(self.negative_sampling(items)), items))
 
-            # for p in self.discriminator.parameters():
-            #     p.data.clamp_(-clip_value, clip_value)
+            for p in self.discriminator.parameters():
+                p.data.clamp_(-clip_value, clip_value)
 
             tqdm_dict = {'d_loss': d_loss}
             output = OrderedDict({
@@ -122,10 +122,7 @@ class CFWGAN(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         items = batch
         generator_output = self.generator(self.negative_sampling(items))
-        items_rank = torch.argsort(generator_output, dim=-1)
-        items_rank = items_rank[:, :5]
-        items = [set([x for x,y in enumerate(items[i]) if y == 1]) for i in range(items.shape[0])]
-        precision_at_5 = sum([len(items[i].intersection(items_rank[i])) / 5 for i in range(len(items))]) / len(items)
+        precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
         tqdm_dict = {'precision_at_5': precision_at_5}
         output = OrderedDict({
             'progress_bar': tqdm_dict,
@@ -138,6 +135,14 @@ class CFWGAN(pl.LightningModule):
         opt_g = torch.optim.Adam(self.generator.parameters())
         opt_d = torch.optim.Adam(self.discriminator.parameters())
         return [opt_g, opt_d], []
+
+    @staticmethod
+    def precision_at_n(items_predicted, items, n=5):
+        items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
+        items_rank = items_rank[:, :n]
+        items = [set([x for x, y in enumerate(items[i]) if y == 1]) for i in range(items.shape[0])]
+        precision = sum([len(items[i].intersection(items_rank[i].tolist())) / n for i in range(len(items))]) / len(items)
+        return precision
 
     # def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_idx, optimizer_closure, on_tpu, using_native_amp,
     #                   using_lbfgs):
