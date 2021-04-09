@@ -8,11 +8,10 @@ class Recommender():
         self.model = Recommender.load_model(path_to_model)
         self.dataset = MovieLensDataset(ratings_file=ratings_file, movies_file=movies_file)
 
-    @staticmethod
-    def load_model(path):
+    def load_model(self, path):
         if path is None or path == '':
             return None
-        model = CFWGAN.load_from_checkpoint(path)
+        model = CFWGAN.load_from_checkpoint(path, num_items=len(self.dataset))
         return model
 
     def generate(self, vector):
