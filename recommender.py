@@ -1,6 +1,7 @@
 import torch
 
 from dataset import MovieLensDataset
+from model_cfwgan import CFWGAN
 
 class Recommender():
     def __init__(self, path_to_model=None, ratings_file=None, movies_file=None):
@@ -9,8 +10,8 @@ class Recommender():
 
     @staticmethod
     def load_model(path):
-        #TODO: Load model
-        return None
+        model = CFWGAN.load_from_checkpoint(path)
+        return model
 
     def generate(self, vector):
         return self.model.forward(torch.tensor(vector))
