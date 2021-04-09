@@ -111,13 +111,8 @@ class CFWGAN(pl.LightningModule):
             generator_output = self.generator(items)
             g_loss = -torch.mean(self.discriminator(generator_output * (items + k), items)) + \
                      torch.sum((items - generator_output)**2*zr) / zr.sum()
-            tqdm_dict = {'g_loss': g_loss}
-            output = OrderedDict({
-                'loss': g_loss,
-                'progress_bar': tqdm_dict,
-                'log': tqdm_dict
-            })
-            return output
+            self.log('g_loss', g_loss, prog_bar=True, on_step=True, on_epoch=True)
+            return g_loss
 
         # train discriminator
         # Measure discriminator's ability to classify real from generated samples
@@ -130,24 +125,14 @@ class CFWGAN(pl.LightningModule):
             for p in self.discriminator.parameters():
                 p.data.clamp_(-clip_value, clip_value)
 
-            tqdm_dict = {'d_loss': d_loss}
-            output = OrderedDict({
-                'loss': d_loss,
-                'progress_bar': tqdm_dict,
-                'log': tqdm_dict
-            })
-            return output
+            self.log('d_loss', d_loss, prog_bar=True, on_step=True, on_epoch=True)
+            return d_loss
 
     def validation_step(self, batch, batch_idx):
         items = batch
         generator_output = self.generator(items)
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
-        tqdm_dict = {'precision_at_5': precision_at_5}
-        output = OrderedDict({
-            'progress_bar': tqdm_dict,
-            'log': tqdm_dict
-        })
-        return output
+        self.log('precision_at_5', precision_at_5, prog_bar=True, on_step=False, on_epoch=True)
 
     def configure_optimizers(self):
         opt_g = torch.optim.Adam(self.generator.parameters())
