@@ -10,6 +10,8 @@ class Recommender():
 
     @staticmethod
     def load_model(path):
+        if path is None or path == '':
+            return None
         model = CFWGAN.load_from_checkpoint(path)
         return model
 
