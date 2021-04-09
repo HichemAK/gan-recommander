@@ -18,7 +18,7 @@ class Recommender():
         return self.model.forward(torch.tensor(vector))
 
     def filter_vector(self, input, output):
-        filtered = input * output
+        filtered = ((input - 1) * (-1)) * output
         return filtered
 
     def top_k(self, vector, k=1):
@@ -33,4 +33,3 @@ class Recommender():
         filtered = list(np.array(filtered) - 1)
         filtered.reverse()
         return self.dataset.get_movie_list_str(filtered)
-    
