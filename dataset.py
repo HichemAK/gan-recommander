@@ -36,7 +36,7 @@ class MovieLensDataset(Dataset):
         if self.transform:
             sample = self.transform(sample)
 
-        return sample
+        return sample, idx
 
     @staticmethod
     def get_movies_dataframe(csv_file=None):

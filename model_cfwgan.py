@@ -66,7 +66,7 @@ class Discriminator(nn.Module):
 
 
 class CFWGAN(pl.LightningModule):
-    def __init__(self, num_items, alpha=0.04, s_zr=0.6, s_pm=0.6, g_steps=1, d_steps=1):
+    def __init__(self, trainset, num_items, alpha=0.04, s_zr=0.6, s_pm=0.6, g_steps=1, d_steps=1):
         super().__init__()
         self.generator = Generator(num_items, 256, 3)
         self.discriminator = Discriminator(num_items, 3)
@@ -77,13 +77,13 @@ class CFWGAN(pl.LightningModule):
         self.alpha = alpha
         self.s_zr = s_zr
         self.s_pm = s_pm
+        self.trainset = trainset
 
     def forward(self, item_full):
         x = self.generator(item_full)
         return x
 
     def negative_sampling(self, items):
-        # TODO : Implement negative sampling
         zr_all, pm_all = [], []
         for i in range(items.shape[0]):
             where_zeros = torch.where(items[i] == 0)[0].tolist()
@@ -100,7 +100,7 @@ class CFWGAN(pl.LightningModule):
         return torch.stack(zr_all, dim=0), torch.stack(pm_all, dim=0)
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        items = batch
+        items, idx = batch
         zr, k = self.negative_sampling(items)
 
         clip_value = 0.001
@@ -129,8 +129,11 @@ class CFWGAN(pl.LightningModule):
             return d_loss
 
     def validation_step(self, batch, batch_idx):
-        items = batch
-        generator_output = self.generator(items)
+        items, idx = batch
+        train_items = self.trainset[idx][0]
+        generator_output = self.generator(train_items)
+        generator_output[torch.where(train_items == 1)] = -float('inf')
+
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
         self.log('precision_at_5', precision_at_5, prog_bar=True, on_step=False, on_epoch=True)
 
