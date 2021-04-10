@@ -146,9 +146,7 @@ class CFWGAN(pl.LightningModule):
     def precision_at_n(items_predicted, items, n=5):
         items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
         items_rank = items_rank[:, :n]
-        items = [set([x for x, y in enumerate(items[i]) if y == 1]) for i in range(items.shape[0])]
-        precision = sum([len(items[i].intersection(items_rank[i].tolist())) / n for i in range(len(items))]) / len(
-            items)
+        precision = items[torch.repeat_interleave(torch.arange(items.shape[0]), n),items_rank.flatten()].float().mean().item()
         return precision
 
     # def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_idx, optimizer_closure, on_tpu, using_native_amp,

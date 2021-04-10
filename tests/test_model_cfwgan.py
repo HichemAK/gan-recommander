@@ -41,9 +41,9 @@ class MyTestCase(unittest.TestCase):
                                         [0.26514016, 0.25176894, 0.41136022, 0.39306909, 0.13250113, 0.84741624],
                                         [0.14425929, 0.2018705, 0.15223548, 0.73594551, 0.76860745, 0.70887101]])
         precision = CFWGAN.precision_at_n(items_predicted, items, n=2)
-        self.assertEqual(precision, (1/2 + 1/2 + 1/2)/3)
+        self.assertAlmostEqual(precision, (1/2 + 1/2 + 1/2)/3)
         precision = CFWGAN.precision_at_n(items_predicted, items, n=3)
-        self.assertEqual(precision, (1 / 3 + 2 / 3 + 2 / 3) / 3)
+        self.assertAlmostEqual(precision, (1 / 3 + 2 / 3 + 2 / 3) / 3)
 
     def test_negative_sampling(self):
         class Test:
