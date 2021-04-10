@@ -137,6 +137,15 @@ class CFWGAN(pl.LightningModule):
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
         self.log('precision_at_5', precision_at_5, prog_bar=True, on_step=False, on_epoch=True)
 
+    def test_step(self, batch, batch_idx):
+        items, idx = batch
+        train_items = self.trainset[idx][0].to(items.device)
+        generator_output = self.generator(train_items)
+        generator_output[torch.where(train_items == 1)] = -float('inf')
+
+        precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
+        self.log('precision_at_5_test', precision_at_5, prog_bar=True, on_step=False, on_epoch=True)
+
     def configure_optimizers(self):
         opt_g = torch.optim.Adam(self.generator.parameters())
         opt_d = torch.optim.Adam(self.discriminator.parameters())
