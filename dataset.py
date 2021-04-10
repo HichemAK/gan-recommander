@@ -4,6 +4,8 @@ import pandas as pd
 import os
 import numpy as np
 import scipy.sparse as sparse
+import copy
+import random
 
 class MovieLensDataset(Dataset):
     def __init__(self, ratings_file=None, movies_file=None, transform=None):
@@ -107,6 +109,26 @@ class MovieLensDataset(Dataset):
             l.append(self.get_movie(i))
 
         return "\n".join(l)
+
+    def split_train_test(self, test_size=0.2):
+        train_matrix = self.matrix.copy()
+        nz = train_matrix.nonzero()
+        nz = list(zip(*[x.tolist() for x in nz]))
+        test = random.sample(nz, round(len(nz) * test_size))
+        test = tuple(np.array(x) for x in zip(*test))
+        test_matrix = sparse.csr_matrix(train_matrix.shape)
+        test_matrix[test] = 1
+        train_matrix[test] = 0
+
+        train = copy.deepcopy(self)
+        train.matrix = train_matrix
+
+        test = copy.deepcopy(self)
+        test.matrix = test_matrix
+
+        return train, test
+
+
 
 if __name__ == "__main__":
     ds = MovieLensDataset(ratings_file="movielens/ml-latest-small/ratings.csv", movies_file="movielens/ml-latest-small/movies.csv")

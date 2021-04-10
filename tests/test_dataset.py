@@ -32,5 +32,14 @@ class MyTestCase(unittest.TestCase):
             "#2: Jumanji (1995) ===> Adventure|Children|Fantasy"
         self.assertTrue(dataset.get_movie_list_str([4,3]) == expected_str_list)
 
+    def test_split_train_test(self):
+        dataset = MovieLensDataset(ratings_file='test_ratings.csv', movies_file='test_movies.csv')
+        train, test = dataset.split_train_test(0.1)
+        self.assertEqual(train.matrix.shape, dataset.matrix.shape)
+        self.assertEqual(test.matrix.shape, dataset.matrix.shape)
+        self.assertEqual(test.matrix.nonzero()[0].size, round(dataset.matrix.nonzero()[0].size * 0.1))
+        self.assertEqual(train.matrix.nonzero()[0].size, round(dataset.matrix.nonzero()[0].size * 0.9))
+
+
 if __name__ == '__main__':
     unittest.main()
