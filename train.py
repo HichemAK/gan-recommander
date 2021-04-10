@@ -20,9 +20,10 @@ test, val = random_split(dataset, [test_size, len(test)-test_size], generator=to
 
 model = CFWGAN(train, dataset.item_count, alpha=0.1, s_zr=0.7, s_pm=0.7)
 
-model_checkpoint = ModelCheckpoint(monitor='precision_at_5', save_top_k=5, save_weights_only=True, mode='max')
+model_checkpoint = ModelCheckpoint(monitor='precision_at_5', save_top_k=5, save_weights_only=True, mode='max',
+                                   filename='model-{epoch}-{precision_at_5:.2f}')
 
-trainer = pl.Trainer(max_epochs=10, callbacks=[model_checkpoint])
+trainer = pl.Trainer(max_epochs=100, callbacks=[model_checkpoint])
 trainer.fit(model, DataLoader(train, batch_size, shuffle=True), DataLoader(val, batch_size*2))
 trainer.test(model, DataLoader(test, batch_size*2))
 

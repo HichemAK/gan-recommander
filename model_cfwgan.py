@@ -130,7 +130,7 @@ class CFWGAN(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         items, idx = batch
-        train_items = self.trainset[idx][0]
+        train_items = self.trainset[idx][0].to(items.device)
         generator_output = self.generator(train_items)
         generator_output[torch.where(train_items == 1)] = -float('inf')
 
@@ -146,7 +146,8 @@ class CFWGAN(pl.LightningModule):
     def precision_at_n(items_predicted, items, n=5):
         items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
         items_rank = items_rank[:, :n]
-        precision = items[torch.repeat_interleave(torch.arange(items.shape[0]), n),items_rank.flatten()].float().mean().item()
+        precision = items[torch.repeat_interleave(torch.arange(items.shape[0]), n).to(items_rank.device),
+                          items_rank.flatten()].float().mean().item()
         return precision
 
     # def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_idx, optimizer_closure, on_tpu, using_native_amp,
