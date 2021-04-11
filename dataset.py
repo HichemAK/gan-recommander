@@ -131,5 +131,5 @@ class MovieLensDataset(Dataset):
 
 
 if __name__ == "__main__":
-    ds = MovieLensDataset(ratings_file="movielens/ml-latest-small/ratings.csv", movies_file="movielens/ml-latest-small/movies.csv")
+    ds = MovieLensDataset(ratings_file="movielens/ml-100k/ratings.csv", movies_file="movielens/ml-100k/movies.csv")
     print(ds[0])
