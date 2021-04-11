@@ -136,7 +136,7 @@ class CFWGAN(pl.LightningModule):
 
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
         self.log('precision_at_5', precision_at_5, prog_bar=True, on_step=False, on_epoch=True)
-        self._info_debug = precision_at_5
+        self._info_debug = CFWGAN.precision_at_n(generator_output, items, n=2)
 
     def test_step(self, batch, batch_idx):
         items, idx = batch
