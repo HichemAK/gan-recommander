@@ -133,7 +133,7 @@ class CFWGAN(pl.LightningModule):
                 g_loss += self.alpha * torch.sum(((items - generator_output) ** 2) * zr) / zr.sum()
             self.log('g_loss', g_loss, prog_bar=True, on_step=True, on_epoch=True)
             opt_g.zero_grad()
-            self.manual_backward(g_loss, opt_d)
+            self.manual_backward(g_loss, opt_g)
             opt_g.step()
         self.step += 1
 
