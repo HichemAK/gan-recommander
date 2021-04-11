@@ -26,7 +26,6 @@ class MyTestCase(unittest.TestCase):
             "#1: Toy Story (1995) ===> Adventure|Animation|Children|Comedy|Fantasy" + "\n\n" + \
             "probs: [0.9, 0.8]"
         self.assertTrue(recommender.top_k(input_vector, top_k) == expected_result)
-        print(expected_result)
 
 if __name__ == '__main__':
     unittest.main()
