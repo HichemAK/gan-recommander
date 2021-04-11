@@ -72,13 +72,13 @@ class CFWGAN(pl.LightningModule):
         self.discriminator = Discriminator(num_items, 3)
         self.g_steps = g_steps
         self.d_steps = d_steps
-        self._g_steps = 0
-        self._d_steps = 0
         self.alpha = alpha
         self.s_zr = s_zr
         self.s_pm = s_pm
         self.trainset = trainset
         self.debug = debug
+        self.step = 0
+        self.automatic_optimization = False
 
     def forward(self, item_full):
         x = self.generator(item_full)
@@ -101,26 +101,18 @@ class CFWGAN(pl.LightningModule):
         return torch.stack(zr_all, dim=0), torch.stack(pm_all, dim=0)
 
     def training_step(self, batch, batch_idx, optimizer_idx):
+        # access your optimizers with use_pl_optimizer=False. Default is True
+        opt_g, opt_d = self.optimizers(use_pl_optimizer=True)
+
         items, idx = batch
         zr, k = self.negative_sampling(items)
 
         clip_value = 0.001
 
-        # train generator
-        if optimizer_idx == 0:
-            # adversarial loss is binary cross-entropy
-            generator_output = self.generator(items)
-            g_loss = -torch.mean(self.discriminator(generator_output * (items + k), items))
-            if self.alpha != 0:
-                g_loss += self.alpha * torch.sum(((items - generator_output) ** 2) * zr) / zr.sum()
-            self.log('g_loss', g_loss, prog_bar=True, on_step=True, on_epoch=True)
-            return g_loss
-
         # train discriminator
         # Measure discriminator's ability to classify real from generated samples
-
         # discriminator loss is the average of these
-        elif optimizer_idx == 1:
+        if self.step % (self.g_steps + self.d_steps) < self.d_steps:
             d_loss = -torch.mean(self.discriminator(items, items)) + \
                      torch.mean(self.discriminator(self.generator(items) * (items + k), items))
 
@@ -128,7 +120,22 @@ class CFWGAN(pl.LightningModule):
                 p.data.clamp_(-clip_value, clip_value)
 
             self.log('d_loss', d_loss, prog_bar=True, on_step=True, on_epoch=True)
-            return d_loss
+            opt_d.zero_grad()
+            self.manual_backward(d_loss, opt_d)
+            opt_d.step()
+
+        # train generator
+        else:
+            # adversarial loss is binary cross-entropy
+            generator_output = self.generator(items)
+            g_loss = -torch.mean(self.discriminator(generator_output * (items + k), items))
+            if self.alpha != 0:
+                g_loss += self.alpha * torch.sum(((items - generator_output) ** 2) * zr) / zr.sum()
+            self.log('g_loss', g_loss, prog_bar=True, on_step=True, on_epoch=True)
+            opt_g.zero_grad()
+            self.manual_backward(g_loss, opt_d)
+            opt_g.step()
+        self.step += 1
 
     def validation_step(self, batch, batch_idx):
         items, idx = batch
