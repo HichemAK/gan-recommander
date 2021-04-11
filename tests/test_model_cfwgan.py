@@ -72,7 +72,7 @@ class MyTestCase(unittest.TestCase):
 
         dataset = MovieLensDataset('test_ratings.csv', 'test_movies.csv')
         train, test = dataset.split_train_test(test_size=0.4)
-        model = CFWGAN(train, dataset.item_count, alpha=0.1, s_zr=0.7, s_pm=0.7)
+        model = CFWGAN(train, dataset.item_count, alpha=0.1, s_zr=0.7, s_pm=0.7, debug=True)
         """train = [[0.0, 0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0, 0.0],
                          [0.0, 1.0, 0.0, 0.0, 0.0]]
         test = '[[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0, 0.0], 

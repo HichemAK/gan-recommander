@@ -66,7 +66,7 @@ class Discriminator(nn.Module):
 
 
 class CFWGAN(pl.LightningModule):
-    def __init__(self, trainset, num_items, alpha=0.04, s_zr=0.6, s_pm=0.6, g_steps=1, d_steps=1):
+    def __init__(self, trainset, num_items, alpha=0.04, s_zr=0.6, s_pm=0.6, g_steps=1, d_steps=1, debug=False):
         super().__init__()
         self.generator = Generator(num_items, 256, 3)
         self.discriminator = Discriminator(num_items, 3)
@@ -78,6 +78,7 @@ class CFWGAN(pl.LightningModule):
         self.s_zr = s_zr
         self.s_pm = s_pm
         self.trainset = trainset
+        self.debug = debug
 
     def forward(self, item_full):
         x = self.generator(item_full)
@@ -136,7 +137,8 @@ class CFWGAN(pl.LightningModule):
 
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
         self.log('precision_at_5', precision_at_5, prog_bar=True, on_step=False, on_epoch=True)
-        self._info_debug = CFWGAN.precision_at_n(generator_output, items, n=2)
+        if self.debug:
+            self._info_debug = CFWGAN.precision_at_n(generator_output, items, n=2)
 
     def test_step(self, batch, batch_idx):
         items, idx = batch
