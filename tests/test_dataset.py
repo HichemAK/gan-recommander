@@ -17,11 +17,11 @@ class MyTestCase(unittest.TestCase):
 
         # test for first item retrieval
         expected_retrieval = torch.tensor([0., 0., 0., 1., 1.,])
-        self.assertTrue(torch.equal(dataset[0], expected_retrieval))
+        self.assertTrue(torch.equal(dataset[0][0], expected_retrieval))
 
         # test for last item retrieval
         expected_retrieval = torch.tensor([1., 1., 0., 0., 0.,])
-        self.assertTrue(torch.equal(dataset[-1], expected_retrieval))
+        self.assertTrue(torch.equal(dataset[-1][0], expected_retrieval))
 
         # test for movie retrieval
         expected_string = "#1: Toy Story (1995) ===> Adventure|Animation|Children|Comedy|Fantasy"

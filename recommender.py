@@ -18,7 +18,7 @@ class Recommender():
         return self.model.forward(torch.tensor(vector))
 
     def filter_vector(self, input, output):
-        filtered = ((input - 1) * (-1)) * output
+        filtered = input * output
         return filtered
 
     def top_k(self, vector, k=1):
