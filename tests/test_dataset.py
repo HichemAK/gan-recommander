@@ -40,6 +40,16 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(test.matrix.nonzero()[0].size, round(dataset.matrix.nonzero()[0].size * 0.1))
         self.assertEqual(train.matrix.nonzero()[0].size, round(dataset.matrix.nonzero()[0].size * 0.9))
 
+        train, test = dataset.split_train_test(0.2)
+        self.assertEqual(train.matrix.shape, dataset.matrix.shape)
+        self.assertEqual(test.matrix.shape, dataset.matrix.shape)
+        self.assertEqual(test.matrix.nonzero()[0].size, round(dataset.matrix.nonzero()[0].size * 0.2))
+        self.assertEqual(train.matrix.nonzero()[0].size, round(dataset.matrix.nonzero()[0].size * 0.8))
+
+        s = test.matrix + train.matrix
+        self.assertTrue(not (s != dataset.matrix).todense().any())
+        self.assertTrue(((s.todense() == 1) | (s.todense() == 0)).all())
+
 
 if __name__ == '__main__':
     unittest.main()

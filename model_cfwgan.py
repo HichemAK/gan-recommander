@@ -136,6 +136,7 @@ class CFWGAN(pl.LightningModule):
 
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
         self.log('precision_at_5', precision_at_5, prog_bar=True, on_step=False, on_epoch=True)
+        self._info_debug = precision_at_5
 
     def test_step(self, batch, batch_idx):
         items, idx = batch
@@ -153,10 +154,15 @@ class CFWGAN(pl.LightningModule):
 
     @staticmethod
     def precision_at_n(items_predicted, items, n=5):
+        div = items.sum(-1)
+        div, _ = torch.stack([div, torch.ones_like(div) * n]).min(0)
+        where = torch.where(div > 0)
+        items, items_predicted, div = items[where], items_predicted[where], div[where]
         items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
         items_rank = items_rank[:, :n]
-        precision = items[torch.repeat_interleave(torch.arange(items.shape[0]), n).to(items_rank.device),
-                          items_rank.flatten()].float().mean().item()
+        precision = items[torch.repeat_interleave(torch.arange(items.shape[0]), n).to(items_rank.device).view(*items_rank.shape),
+                          items_rank].float()
+        precision = (precision.sum(-1) / div).mean()
         return precision
 
     # def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_idx, optimizer_closure, on_tpu, using_native_amp,

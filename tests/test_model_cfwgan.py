@@ -2,8 +2,11 @@ import unittest
 
 import numpy as np
 import torch
+from torch.utils.data import random_split
 
+from dataset import MovieLensDataset
 from model_cfwgan import MLPTower, MLPRepeat, Generator, Discriminator, CFWGAN
+import pytorch_lightning as pl
 
 
 class MyTestCase(unittest.TestCase):
@@ -44,6 +47,36 @@ class MyTestCase(unittest.TestCase):
         self.assertAlmostEqual(precision, (1/2 + 1/2 + 1/2)/3)
         precision = CFWGAN.precision_at_n(items_predicted, items, n=3)
         self.assertAlmostEqual(precision, (1 / 3 + 2 / 3 + 2 / 3) / 3)
+
+    def test_precision_at_n_few_pos(self):
+        items = torch.tensor([[0, 1, 0, 0, 0, 1],
+                              [0, 0, 0, 1, 0, 1],
+                              [0, 0, 1, 0, 1, 1]])
+        items_predicted = torch.tensor([[1.2, 3, 2, 1.1, 1.8, 2.1],
+                                        [0.26514016, 0.25176894, 0.41136022, 0.39306909, 0.13250113, 0.84741624],
+                                        [0.14425929, 0.2018705, 0.15223548, 0.73594551, 0.76860745, 0.70887101]])
+        precision = CFWGAN.precision_at_n(items_predicted, items, n=3)
+        self.assertAlmostEqual(precision.item(), (2 / 2 + 2 / 2 + 2 / 3) / 3)
+
+        items = torch.tensor([[0, 1, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0],
+                              [0, 0, 1, 0, 1, 1]])
+        items_predicted = torch.tensor([[1.2, 3, 2, 1.1, 1.8, 2.1],
+                                        [0.26514016, 0.25176894, 0.41136022, 0.39306909, 0.13250113, 0.84741624],
+                                        [0.14425929, 0.2018705, 0.15223548, 0.73594551, 0.76860745, 0.70887101]])
+        precision = CFWGAN.precision_at_n(items_predicted, items, n=3)
+        self.assertAlmostEqual(precision.item(), (1 / 1 + 2 / 3) / 2)
+
+    def test_validation_step(self):
+        pl.seed_everything(123443)
+
+        dataset = MovieLensDataset('test_ratings.csv', 'test_movies.csv')
+        train, test = dataset.split_train_test(test_size=0.4)
+
+        model = CFWGAN(train, dataset.item_count, alpha=0.1, s_zr=0.7, s_pm=0.7)
+        # model.validation_step(test[3], [3])
+
+
 
     def test_negative_sampling(self):
         class Test:
