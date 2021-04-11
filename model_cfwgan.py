@@ -110,8 +110,9 @@ class CFWGAN(pl.LightningModule):
         if optimizer_idx == 0:
             # adversarial loss is binary cross-entropy
             generator_output = self.generator(items)
-            g_loss = -torch.mean(self.discriminator(generator_output * (items + k), items)) + \
-                     torch.sum((items - generator_output)**2*zr) / zr.sum()
+            g_loss = -torch.mean(self.discriminator(generator_output * (items + k), items))
+            if self.alpha != 0:
+                g_loss += self.alpha * torch.sum(((items - generator_output) ** 2) * zr) / zr.sum()
             self.log('g_loss', g_loss, prog_bar=True, on_step=True, on_epoch=True)
             return g_loss
 
@@ -121,7 +122,7 @@ class CFWGAN(pl.LightningModule):
         # discriminator loss is the average of these
         elif optimizer_idx == 1:
             d_loss = -torch.mean(self.discriminator(items, items)) + \
-                     torch.mean(self.discriminator(self.generator(items)*(items + k), items))
+                     torch.mean(self.discriminator(self.generator(items) * (items + k), items))
 
             for p in self.discriminator.parameters():
                 p.data.clamp_(-clip_value, clip_value)
@@ -162,8 +163,9 @@ class CFWGAN(pl.LightningModule):
         items, items_predicted, div = items[where], items_predicted[where], div[where]
         items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
         items_rank = items_rank[:, :n]
-        precision = items[torch.repeat_interleave(torch.arange(items.shape[0]), n).to(items_rank.device).view(*items_rank.shape),
-                          items_rank].float()
+        precision = items[
+            torch.repeat_interleave(torch.arange(items.shape[0]), n).to(items_rank.device).view(*items_rank.shape),
+            items_rank].float()
         precision = (precision.sum(-1) / div).mean()
         return precision
 
