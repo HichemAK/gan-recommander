@@ -65,7 +65,7 @@ class MovieLensDataset(Dataset):
         return df
 
     @staticmethod
-    def remove_gaps(pd_series, movie_dict=None, flip=False):
+    def remove_gaps(pd_series, movie_dict=None, flip=True):
         real_count = len(pd_series.unique())
 
         for i in range(1, real_count + 1):
@@ -78,7 +78,13 @@ class MovieLensDataset(Dataset):
         pd_series = pd_series.apply(positify)
 
         if flip:
-            pass
+            pd_series = pd_series * (-1) + max(pd_series) + 1
+
+            dict_max = max(list(movie_dict.values()))
+            for key in movie_dict:
+                val = movie_dict[key]
+                new_val = (val * (-1)) + dict_max + 1
+                movie_dict[key] = new_val
 
         return pd_series
 
