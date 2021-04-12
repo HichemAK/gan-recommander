@@ -56,9 +56,9 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self, num_items, num_hidden_layers):
         super().__init__()
-        self.mlp_tower = nn.Sequential(nn.Linear(2 * num_items, 1024), nn.ReLU(True), nn.Linear(1024, 512),
+        self.mlp_tower = nn.Sequential(nn.Linear(2 * num_items, 256), nn.ReLU(True), nn.Linear(256, 128),
                                        nn.ReLU(True),
-                                       nn.Linear(512, 256), nn.ReLU(True), nn.Linear(256, 1))
+                                       nn.Linear(128, 64), nn.ReLU(True), nn.Linear(64, 1))
 
     def forward(self, generator_output, item_full):
         x = torch.cat([generator_output, item_full], dim=-1)
@@ -77,7 +77,7 @@ class CFWGAN(pl.LightningModule):
         self.s_pm = s_pm
         self.trainset = trainset
         self.debug = debug
-        self.step = 0
+        self.step_gd = 0
         self.automatic_optimization = False
 
     def forward(self, item_full):
@@ -110,15 +110,14 @@ class CFWGAN(pl.LightningModule):
         # train discriminator
         # Measure discriminator's ability to classify real from generated samples
         # discriminator loss is the average of these
-        if self.step % (self.g_steps + self.d_steps) > self.g_steps:
-            d_loss = -torch.mean(torch.log(10e-5 + self.discriminator(items, items))) - \
-                     torch.mean(torch.log(1 + 10e-5 - self.discriminator(self.generator(items) * (items + k), items)))
-            d_loss /= 2
+        if self.step_gd % (self.g_steps + self.d_steps) < self.d_steps:
+            d_loss = -torch.mean(torch.log(10e-5 + self.discriminator(items, items)) +
+                                 torch.log(1 + 10e-5 - self.discriminator(self.generator(items) * (items + k), items)))
 
             self.log('d_loss', d_loss, prog_bar=True, on_step=True, on_epoch=True)
-            opt_d.zero_grad()
-            self.manual_backward(d_loss, opt_d)
+            self.manual_backward(d_loss, opt_d, retain_graph=True)
             opt_d.step()
+            opt_d.zero_grad()
 
         # train generator
         else:
@@ -128,10 +127,10 @@ class CFWGAN(pl.LightningModule):
             if self.alpha != 0:
                 g_loss += self.alpha * torch.sum(((items - generator_output) ** 2) * zr) / zr.sum()
             self.log('g_loss', g_loss, prog_bar=True, on_step=True, on_epoch=True)
-            opt_g.zero_grad()
-            self.manual_backward(g_loss, opt_g)
+            self.manual_backward(g_loss, opt_g, retain_graph=True)
             opt_g.step()
-        self.step += 1
+            opt_g.zero_grad()
+        self.step_gd += 1
 
     def validation_step(self, batch, batch_idx):
         items, idx = batch

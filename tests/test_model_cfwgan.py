@@ -104,6 +104,11 @@ class MyTestCase(unittest.TestCase):
         for i in range(items.shape[0]):
             self.assertEqual(zr[i].sum(), 3)
             self.assertEqual(pm[i].sum(), 3)
+        t = zr + items
+        self.assertTrue(((t == 0) | (t == 1)).all())
+
+        t = pm + items
+        self.assertTrue(((t == 0) | (t == 1)).all())
 
         test.s_pm = 0
         test.s_zr = 0
