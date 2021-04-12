@@ -2,7 +2,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from torch.utils.data import random_split, DataLoader
 
 from model_cfwgan import CFWGAN
-from dataset import MovieLensDataset
+from dataset2 import MovieLensDataset
 import torch
 import pytorch_lightning as pl
 
@@ -11,7 +11,7 @@ pl.seed_everything(12323)
 
 batch_size = 16
 
-dataset = MovieLensDataset('movielens/ml-100k/ratings.csv', 'movielens/ml-100k/movies.csv')
+dataset = MovieLensDataset('movielens/ml-100k/ratings.csv')
 train, test = dataset.split_train_test(test_size=0.2)
 
 test_size = int(len(test)*0.5)

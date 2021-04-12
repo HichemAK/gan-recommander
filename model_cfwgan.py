@@ -47,22 +47,38 @@ class MLPRepeat(nn.Module):
 class Generator(nn.Module):
     def __init__(self, num_items, hidden_size, num_hidden_layers):
         super().__init__()
-        self.mlp_repeat = MLPRepeat(num_items, num_items, hidden_size, num_hidden_layers)
+        self.mlp_repeat = nn.Sequential(
+            nn.Linear(num_items, 256),
+            nn.ReLU(True),
+            nn.Linear(256, 512),
+            nn.ReLU(True),
+            nn.Linear(512,1024),
+            nn.ReLU(True),
+            nn.Linear(1024, num_items),
+            nn.Sigmoid()
+        )
 
     def forward(self, items):
-        return torch.sigmoid(self.mlp_repeat(items))
+        return self.mlp_repeat(items)
 
 
 class Discriminator(nn.Module):
     def __init__(self, num_items, num_hidden_layers):
         super().__init__()
-        self.mlp_tower = nn.Sequential(nn.Linear(2 * num_items, 256), nn.ReLU(True), nn.Linear(256, 128),
-                                       nn.ReLU(True),
-                                       nn.Linear(128, 64), nn.ReLU(True), nn.Linear(64, 1))
+        self.mlp_tower = nn.Sequential(
+            nn.Linear(2*num_items,1024),
+            nn.ReLU(True),
+            nn.Linear(1024,128),
+            nn.ReLU(True),
+            nn.Linear(128,16),
+            nn.ReLU(True),
+            nn.Linear(16,1),
+            nn.Sigmoid()
+        )
 
     def forward(self, generator_output, item_full):
         x = torch.cat([generator_output, item_full], dim=-1)
-        return torch.sigmoid(self.mlp_tower(x))
+        return self.mlp_tower(x)
 
 
 class CFWGAN(pl.LightningModule):
