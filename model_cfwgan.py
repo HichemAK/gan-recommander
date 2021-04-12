@@ -116,6 +116,8 @@ class CFWGAN(pl.LightningModule):
             d_loss = -torch.mean(self.discriminator(items, items)) + \
                      torch.mean(self.discriminator(self.generator(items) * (items + k), items))
 
+            d_loss /= 2
+
             for p in self.discriminator.parameters():
                 p.data.clamp_(-clip_value, clip_value)
 
