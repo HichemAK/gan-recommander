@@ -132,10 +132,23 @@ class MovieLensDataset(Dataset):
         test = copy.deepcopy(self)
         test.matrix = test_matrix
 
+        train.to_items_file("train.csv")
+        test.to_items_file("test.csv")
+
         return train, test
+
+    def to_items_file(self, filename="result.csv"):
+        item_list = []
+        array = self.matrix.toarray()
+        for i in range(self.matrix.shape[0]):
+            for j in range(self.matrix.shape[1]):
+                if array[i][j] == 1:
+                    item_list.append(f"{i+1}\t{j+1}\t{5}\t{1}")
+
+        with open(filename, 'w') as file:
+            file.write("\n".join(item_list))
 
 
 
 if __name__ == "__main__":
     ds = MovieLensDataset(ratings_file="movielens/ml-100k/ratings.csv", movies_file="movielens/ml-100k/movies.csv")
-    print(ds[0][0])

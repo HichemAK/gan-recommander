@@ -15,4 +15,6 @@ for genre in genres:
 csv_movies["genre"] = csv_movies[genres].apply(lambda x : '|'.join([y for y in x if len(y) > 0]), axis=1)
 csv_movies.drop(genres, axis=1, inplace=True)
 
-csv_movies.to_csv("movies.csv")
+print(csv_movies.head())
+
+csv_movies.to_csv("movies.csv", index=False)
