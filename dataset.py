@@ -59,8 +59,8 @@ class MovieLensDataset(Dataset):
         def minusOne(x):
             return x - 1
 
-        df["userId"] = df["userId"].apply(minusOne)
-        df["movieId"] = df["movieId"].apply(minusOne)
+        # df["userId"] = df["userId"].apply(minusOne)
+        # df["movieId"] = df["movieId"].apply(minusOne)
 
         return df
 
@@ -69,7 +69,7 @@ class MovieLensDataset(Dataset):
         real_count = len(pd_series.unique())
 
         for i in range(1, real_count + 1):
-            movie_dict[i-1] = pd_series.max()
+            movie_dict[i] = pd_series.max()
             pd_series.replace(pd_series.max(), i*(-1), inplace=True)
 
         def positify(x):
