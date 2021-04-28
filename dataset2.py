@@ -11,7 +11,7 @@ from torch.utils.data import Dataset
 
 
 class MovieLensDataset(Dataset):
-    def __init__(self, path):
+    def __init__(self, path, item_based=False):
         df = pd.read_csv(path)
         self.movie_le = LabelEncoder()
         self.user_le = LabelEncoder()
@@ -21,6 +21,8 @@ class MovieLensDataset(Dataset):
 
         row, column, data = df['userId'], df['movieId'], np.ones(len(df))
         self.matrix = scipy.sparse.csr_matrix((data, (row, column)))
+        if item_based:
+            self.matrix = self.matrix.transpose()
 
         self.item_count = self.matrix.shape[-1]
 

@@ -104,12 +104,14 @@ class CFWGAN(pl.LightningModule):
         zr_all, pm_all = [], []
         for i in range(items.shape[0]):
             where_zeros = torch.where(items[i] == 0)[0].tolist()
-            zr_pos = random.sample(where_zeros, round(len(where_zeros) * self.s_zr))
+            n = round(len(where_zeros) * self.s_zr) if isinstance(self.s_zr, float) else self.s_zr
+            zr_pos = random.sample(where_zeros, n)
             zr = torch.zeros_like(items[i])
             zr[zr_pos] = 1
             zr_all.append(zr)
 
-            pm_pos = random.sample(where_zeros, round(len(where_zeros) * self.s_pm))
+            n = round(len(where_zeros) * self.s_pm) if isinstance(self.s_pm, float) else self.s_pm
+            pm_pos = random.sample(where_zeros, n)
             pm = torch.zeros_like(items[i])
             pm[pm_pos] = 1
             pm_all.append(pm)
@@ -130,7 +132,7 @@ class CFWGAN(pl.LightningModule):
             d_loss = -torch.mean(torch.log(10e-5 + self.discriminator(items, items)) +
                                  torch.log(1 + 10e-5 - self.discriminator(self.generator(items) * (items + k), items)))
 
-            self.log('d_loss', d_loss, prog_bar=True, on_step=True, on_epoch=True)
+            self.log('d_loss', d_loss, prog_bar=True, on_step=True, on_epoch=False)
             opt_d.zero_grad()
             self.manual_backward(d_loss, opt_d, retain_graph=True)
             opt_d.step()
@@ -139,11 +141,11 @@ class CFWGAN(pl.LightningModule):
         else:
             # adversarial loss is binary cross-entropy
             generator_output = self.generator(items)
-            print(generator_output.mean(), items.mean())
             g_loss = torch.mean(torch.log(10e-5 + 1 - self.discriminator(generator_output * (items + k), items)))
             if self.alpha != 0:
                 g_loss += self.alpha * torch.sum(((items - generator_output) ** 2) * zr) / items.shape[0]
-            self.log('g_loss', g_loss, prog_bar=True, on_step=True, on_epoch=True)
+            self.log('g_loss', g_loss, prog_bar=True, on_step=True, on_epoch=False)
+            self.log('output_mean', generator_output.mean(), prog_bar=False, on_step=True, on_epoch=False)
             opt_g.zero_grad()
             self.manual_backward(g_loss, opt_g, retain_graph=True)
             opt_g.step()

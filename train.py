@@ -9,17 +9,17 @@ import pytorch_lightning as pl
 
 pl.seed_everything(12323)
 
-batch_size = 16
+batch_size = 32
 
-dataset = MovieLensDataset('movielens/ml-100k/ratings.csv')
+dataset = MovieLensDataset('movielens/ml-100k/ratings.csv', item_based=False)
 train, test = dataset.split_train_test(test_size=0.2)
 
-model = CFWGAN(train, dataset.item_count, alpha=0, s_zr=0, s_pm=0.2, d_steps=3, g_steps=5)
+model = CFWGAN(train, dataset.item_count, alpha=0.1, s_zr=50, s_pm=50, d_steps=2, g_steps=5)
 
 model_checkpoint = ModelCheckpoint(monitor='precision_at_5', save_top_k=5, save_weights_only=True, mode='max',
-                                   filename='model-{epoch}-{precision_at_5:.4f}')
+                                   filename='model-{step}-{precision_at_5:.4f}')
 
-trainer = pl.Trainer(max_epochs=100, callbacks=[model_checkpoint])
+trainer = pl.Trainer(max_epochs=1000, callbacks=[model_checkpoint], log_every_n_steps=5)
 trainer.fit(model, DataLoader(train, batch_size, shuffle=True), DataLoader(test, batch_size*2))
 model = CFWGAN.load_from_checkpoint(model_checkpoint.best_model_path, trainset=train, num_items=dataset.item_count)
 trainer.test(model, DataLoader(test, batch_size*2))
