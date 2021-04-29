@@ -14,7 +14,7 @@ batch_size = 32
 dataset = MovieLensDataset('movielens/ml-100k/ratings.csv', item_based=False)
 train, test = dataset.split_train_test(test_size=0.2)
 
-model = CFWGAN(train, dataset.item_count, alpha=0.1, s_zr=50, s_pm=50, d_steps=2, g_steps=5)
+model = CFWGAN(train, dataset.item_count, alpha=0.1, s_zr=0.5, s_pm=0.5, d_steps=5, g_steps=1)
 
 model_checkpoint = ModelCheckpoint(monitor='precision_at_5', save_top_k=5, save_weights_only=True, mode='max',
                                    filename='model-{step}-{precision_at_5:.4f}')

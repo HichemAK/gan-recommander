@@ -73,7 +73,6 @@ class Discriminator(nn.Module):
             nn.Linear(128, 16),
             nn.ReLU(True),
             nn.Linear(16, 1),
-            nn.Sigmoid()
         )
 
     def forward(self, generator_output, item_full):
@@ -82,7 +81,8 @@ class Discriminator(nn.Module):
 
 
 class CFWGAN(pl.LightningModule):
-    def __init__(self, trainset, num_items, alpha=0.04, s_zr=0.6, s_pm=0.6, g_steps=1, d_steps=1, debug=False):
+    def __init__(self, trainset, num_items, alpha=0.04, s_zr=0.6, s_pm=0.6, g_steps=1, d_steps=1, lambd=10,
+                 debug=False):
         super().__init__()
         self.generator = Generator(num_items, 256, 3)
         self.discriminator = Discriminator(num_items, 3)
@@ -94,6 +94,7 @@ class CFWGAN(pl.LightningModule):
         self.trainset = trainset
         self.debug = debug
         self.step_gd = 0
+        self.lambd = lambd
         self.automatic_optimization = False
 
     def forward(self, item_full):
@@ -129,10 +130,19 @@ class CFWGAN(pl.LightningModule):
         # Measure discriminator's ability to classify real from generated samples
         # discriminator loss is the average of these
         if self.step_gd % (self.g_steps + self.d_steps) >= self.g_steps:
-            d_loss = -torch.mean(torch.log(10e-5 + self.discriminator(items, items)) +
-                                 torch.log(1 + 10e-5 - self.discriminator(self.generator(items) * (items + k), items)))
+            fake_data = self.generator(items)
+            epsilon = torch.rand(items.shape[0], 1)
+            x_hat = torch.tensor(epsilon * fake_data + (1 - epsilon) * items, requires_grad=True)
+            d_hat = self.discriminator(x_hat, items)
+            gradients = torch.autograd.grad(outputs=d_hat, inputs=x_hat,
+                                            grad_outputs=torch.ones_like(d_hat),
+                                            create_graph=True, retain_graph=True, only_inputs=True)[0]
+            gradients_norm = gradients.norm(2, dim=-1)
+            d_loss = torch.mean(self.discriminator(fake_data * items, items) - self.discriminator(items, items)
+                                + self.lambd * (gradients_norm - 1) ** 2)
 
             self.log('d_loss', d_loss, prog_bar=True, on_step=True, on_epoch=False)
+            self.log('gradients_norm', gradients_norm.mean(), prog_bar=False, on_step=True, on_epoch=False)
             opt_d.zero_grad()
             self.manual_backward(d_loss, opt_d, retain_graph=True)
             opt_d.step()
@@ -141,7 +151,7 @@ class CFWGAN(pl.LightningModule):
         else:
             # adversarial loss is binary cross-entropy
             generator_output = self.generator(items)
-            g_loss = torch.mean(torch.log(10e-5 + 1 - self.discriminator(generator_output * (items + k), items)))
+            g_loss = torch.mean(-self.discriminator(generator_output * items, items))
             if self.alpha != 0:
                 g_loss += self.alpha * torch.sum(((items - generator_output) ** 2) * zr) / items.shape[0]
             self.log('g_loss', g_loss, prog_bar=True, on_step=True, on_epoch=False)
@@ -171,8 +181,8 @@ class CFWGAN(pl.LightningModule):
         self.log('precision_at_5_test', precision_at_5, prog_bar=True, on_step=False, on_epoch=True)
 
     def configure_optimizers(self):
-        opt_g = torch.optim.Adam(self.generator.parameters(), lr=0.0001)
-        opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=0.0001)
+        opt_g = torch.optim.Adam(self.generator.parameters(), lr=0.001, betas=(0, 0.9))
+        opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=0.001, betas=(0, 0.9))
         return [opt_g, opt_d], []
 
     @staticmethod
