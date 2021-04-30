@@ -12,7 +12,14 @@ from torch.utils.data import Dataset
 
 class MovieLensDataset(Dataset):
     def __init__(self, path, item_based=False):
-        df = pd.read_csv(path)
+        with open(path, 'r') as file:
+            s = file.readline()
+        sep = ','
+        names = None
+        if '::' in s:
+            sep = '::'
+            names = ['userId', 'movieId', 'rating', 'timestamp']
+        df = pd.read_csv(path, sep=sep, names=names)
         self.movie_le = LabelEncoder()
         self.user_le = LabelEncoder()
         df['userId'] = self.user_le.fit_transform(df['userId'])
