@@ -181,8 +181,8 @@ class CFWGAN(pl.LightningModule):
         self.log('precision_at_5_test', precision_at_5, prog_bar=True, on_step=False, on_epoch=True)
 
     def configure_optimizers(self):
-        opt_g = torch.optim.Adam(self.generator.parameters(), lr=0.001, betas=(0, 0.9))
-        opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=0.001, betas=(0, 0.9))
+        opt_g = torch.optim.Adam(self.generator.parameters(), lr=0.0001, betas=(0, 0.9))
+        opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=0.0001, betas=(0, 0.9))
         return [opt_g, opt_d], []
 
     @staticmethod
