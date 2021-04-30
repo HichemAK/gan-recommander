@@ -19,7 +19,7 @@ model = CFWGAN(train, dataset.item_count, alpha=0.1, s_zr=0.5, s_pm=0.5, d_steps
 model_checkpoint = ModelCheckpoint(monitor='precision_at_5', save_top_k=5, save_weights_only=True, mode='max',
                                    filename='model-{step}-{precision_at_5:.4f}')
 
-trainer = pl.Trainer(max_epochs=1000, callbacks=[model_checkpoint], log_every_n_steps=5)
+trainer = pl.Trainer(max_epochs=1000, callbacks=[model_checkpoint], log_every_n_steps=5, val_check_interval=0.25)
 trainer.fit(model, DataLoader(train, batch_size, shuffle=True), DataLoader(test, batch_size*2))
 model = CFWGAN.load_from_checkpoint(model_checkpoint.best_model_path, trainset=train, num_items=dataset.item_count)
 trainer.test(model, DataLoader(test, batch_size*2))

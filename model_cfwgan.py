@@ -131,8 +131,8 @@ class CFWGAN(pl.LightningModule):
         # discriminator loss is the average of these
         if self.step_gd % (self.g_steps + self.d_steps) >= self.g_steps:
             fake_data = self.generator(items)
-            epsilon = torch.rand(items.shape[0], 1)
-            x_hat = torch.tensor(epsilon * fake_data + (1 - epsilon) * items, requires_grad=True)
+            epsilon = torch.rand(items.shape[0], 1, device=items.device)
+            x_hat = epsilon * fake_data + (1 - epsilon) * items
             d_hat = self.discriminator(x_hat, items)
             gradients = torch.autograd.grad(outputs=d_hat, inputs=x_hat,
                                             grad_outputs=torch.ones_like(d_hat),
@@ -163,7 +163,7 @@ class CFWGAN(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         items, idx = batch
-        train_items = self.trainset[idx][0].to(items.device)
+        train_items = self.trainset[idx.cpu()][0].to(items.device)
         generator_output = self.generator(train_items)
         generator_output[torch.where(train_items == 1)] = -float('inf')
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
@@ -173,7 +173,7 @@ class CFWGAN(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         items, idx = batch
-        train_items = self.trainset[idx][0].to(items.device)
+        train_items = self.trainset[idx.cpu()][0].to(items.device)
         generator_output = self.generator(train_items)
         generator_output[torch.where(train_items == 1)] = -float('inf')
 
