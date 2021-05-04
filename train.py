@@ -11,16 +11,19 @@ pl.seed_everything(12323)
 
 batch_size = 32
 
-dataset = MovieLensDataset('movielens/ml-1m/ratings.dat', item_based=False)
+dataset = MovieLensDataset('movielens/ml-100k/ratings.csv', item_based=False)
 train, test = dataset.split_train_test(test_size=0.2)
+val_size = round(0.2*len(test))
+val, test = random_split(test, [val_size, len(test) - val_size])
 
 model = CFWGAN(train, dataset.item_count, alpha=0.1, s_zr=0.5, s_pm=0.5, d_steps=5, g_steps=1)
 
 model_checkpoint = ModelCheckpoint(monitor='precision_at_5', save_top_k=5, save_weights_only=True, mode='max',
                                    filename='model-{step}-{precision_at_5:.4f}')
 
-trainer = pl.Trainer(max_epochs=1000, callbacks=[model_checkpoint], log_every_n_steps=5, val_check_interval=0.25)
-trainer.fit(model, DataLoader(train, batch_size, shuffle=True), DataLoader(test, batch_size*2))
+trainer = pl.Trainer(max_epochs=1000, callbacks=[model_checkpoint], log_every_n_steps=5,
+                     val_check_interval=5000//batch_size)
+trainer.fit(model, DataLoader(train, batch_size, shuffle=True), DataLoader(val, batch_size*2))
 model = CFWGAN.load_from_checkpoint(model_checkpoint.best_model_path, trainset=train, num_items=dataset.item_count)
 trainer.test(model, DataLoader(test, batch_size*2))
 
