@@ -23,7 +23,7 @@ class MovieLensDataset(Dataset):
         self.movie_le = LabelEncoder()
         self.user_le = LabelEncoder()
         df['userId'] = self.user_le.fit_transform(df['userId'])
-        df['movieId'] = self.user_le.fit_transform(df['movieId'])
+        df['movieId'] = self.movie_le.fit_transform(df['movieId'])
         self.dataframe = df
 
         row, column, data = df['userId'], df['movieId'], np.ones(len(df))
