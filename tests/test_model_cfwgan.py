@@ -67,29 +67,6 @@ class MyTestCase(unittest.TestCase):
         precision = CFWGAN.precision_at_n(items_predicted, items, n=3)
         self.assertAlmostEqual(precision.item(), (1 / 1 + 2 / 3) / 2)
 
-    def test_validation_step(self):
-        pl.seed_everything(123443)
-
-        dataset = MovieLensDataset('test_ratings.csv', 'test_movies.csv')
-        train, test = dataset.split_train_test(test_size=0.4)
-        model = CFWGAN(train, dataset.item_count, alpha=0.1, s_zr=0.7, s_pm=0.7, debug=True)
-        """train = [[0.0, 0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0, 0.0],
-                         [0.0, 1.0, 0.0, 0.0, 0.0]]
-        test = '[[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0, 0.0], 
-        [1.0, 0.0, 0.0, 0.0, 0.0]]'
-        """
-        generator_output = [[0.05486110970377922, 0.01412893459200859, -0.016457993537187576, -0.07126838713884354,
-                             -0.02538265474140644],
-                            [0.039036281406879425, 0.010008297860622406, -0.02964741736650467, -0.02559179812669754,
-                             -0.003673775587230921],
-                            [0.03861333057284355, 0.04027758166193962, -0.046206556260585785, -0.014589466154575348,
-                             -0.022400809451937675],
-                            [0.01941085048019886, 0.027754511684179306, -0.03860647976398468, -0.046702973544597626,
-                             -0.010901669971644878]]
-        assert model.forward(train[:4][0]).tolist() == generator_output
-        model.validation_step(test[:4], 0)
-        self.assertAlmostEqual(model._info_debug, (0/1 + 1/1)/2)
-
     def test_negative_sampling(self):
         class Test:
             def __init__(self, s_zr=0.6, s_pm=0.6):
@@ -118,8 +95,8 @@ class MyTestCase(unittest.TestCase):
             self.assertEqual(zr[i].sum(), 0)
             self.assertEqual(pm[i].sum(), 0)
 
-        test.s_pm = 1
-        test.s_zr = 1
+        test.s_pm = 1.0
+        test.s_zr = 1.0
 
         zr, pm = test.negative_sampling(test, items)
         for i in range(items.shape[0]):

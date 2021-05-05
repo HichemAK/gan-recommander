@@ -192,6 +192,25 @@ class CFWGAN:
         precision = (precision.sum(-1) / div).mean()
         return precision
 
+    @staticmethod
+    def ndcg(items_predicted, items, n=5):
+        items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
+        items_rank = items_rank[:, :n]
+        j = torch.log2(torch.arange(start=2, end=n+2))
+        dcg = (items[items_rank] / j).sum()
+        perfect_rank = torch.argsort(items, dim=-1, descending=True)[:,:n]
+        idcg = (items[perfect_rank] / j).sum()
+        ndcg = dcg/idcg
+        return ndcg
+
+    @staticmethod
+    def recall_at_n(items_predicted, items, n=5):
+        items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
+        items_rank = items_rank[:, :n]
+        recall = items[items_rank].sum() / items.sum()
+        return recall
+
+
     # def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_idx, optimizer_closure, on_tpu, using_native_amp,
     #                   using_lbfgs):
     #     # update generator opt every 2 steps
