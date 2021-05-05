@@ -11,7 +11,8 @@ pl.seed_everything(12323)
 
 batch_size = 32
 
-dataset = MovieLensDataset('movielens/ml-100k/ratings.csv', item_based=False)
+dataset = MovieLensDataset('movielens/ml-1m/ratings.csv', item_based=False)
+
 train, test = dataset.split_train_test(test_size=0.2)
 val_size = round(0.2*len(test))
 val, test = random_split(test, [val_size, len(test) - val_size])

@@ -103,6 +103,12 @@ class MyTestCase(unittest.TestCase):
             self.assertEqual(zr[i].sum(), 5)
             self.assertEqual(pm[i].sum(), 5)
 
+    def test_ndcg(self):
+        items_predicted = torch.tensor([1, 0.9, 0.8, 0.7]).unsqueeze(0)
+        items = torch.tensor([0.4, 0.8, 0.9, 0.3, 0.9])
+        ndcg = CFWGAN.ndcg(items_predicted, items, n=4)
+        self.assertAlmostEqual(ndcg, 0.727, places=3)
+
 
 if __name__ == '__main__':
     unittest.main()
