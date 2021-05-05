@@ -167,7 +167,11 @@ class CFWGAN(pl.LightningModule):
         generator_output = self.generator(train_items)
         generator_output[torch.where(train_items == 1)] = -float('inf')
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
+        recall_at_5 = CFWGAN.recall_at_n(generator_output, items, n=5)
+        ndcg_at_5 = CFWGAN.ndcg(generator_output, items, n=5)
         self.log('precision_at_5', precision_at_5, prog_bar=True, on_step=False, on_epoch=True)
+        self.log('recall_at_5', recall_at_5, prog_bar=True, on_step=False, on_epoch=True)
+        self.log('ndcg_at_5', ndcg_at_5, prog_bar=True, on_step=False, on_epoch=True)
         if self.debug:
             self._info_debug = CFWGAN.precision_at_n(generator_output, items, n=2)
 
@@ -178,7 +182,18 @@ class CFWGAN(pl.LightningModule):
         generator_output[torch.where(train_items == 1)] = -float('inf')
 
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
-        self.log('precision_at_5_test', precision_at_5, prog_bar=True, on_step=False, on_epoch=True)
+        recall_at_5 = CFWGAN.recall_at_n(generator_output, items, n=5)
+        ndcg_at_5 = CFWGAN.ndcg(generator_output, items, n=5)
+        self.log('precision_at_5', precision_at_5, prog_bar=True, on_step=False, on_epoch=True)
+        self.log('recall_at_5', recall_at_5, prog_bar=True, on_step=False, on_epoch=True)
+        self.log('ndcg_at_5', ndcg_at_5, prog_bar=True, on_step=False, on_epoch=True)
+
+        precision_at_20 = CFWGAN.precision_at_n(generator_output, items, n=20)
+        recall_at_20 = CFWGAN.recall_at_n(generator_output, items, n=20)
+        ndcg_at_20 = CFWGAN.ndcg(generator_output, items, n=20)
+        self.log('precision_at_20', precision_at_20, prog_bar=True, on_step=False, on_epoch=True)
+        self.log('recall_at_20', recall_at_20, prog_bar=True, on_step=False, on_epoch=True)
+        self.log('ndcg_at_20', ndcg_at_20, prog_bar=True, on_step=False, on_epoch=True)
 
     def configure_optimizers(self):
         opt_g = torch.optim.Adam(self.generator.parameters(), lr=0.0001, betas=(0, 0.9))
@@ -203,19 +218,19 @@ class CFWGAN(pl.LightningModule):
     def ndcg(items_predicted, items, n=5):
         items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
         items_rank = items_rank[:, :n]
-        j = torch.log2(torch.arange(start=2, end=n + 2))
-        dcg = (items[items_rank] / j).sum()
+        j = torch.log2(torch.arange(start=2, end=n + 2, dtype=torch.float))
+        dcg = (torch.gather(items, 1, items_rank) / j).sum(-1)
         perfect_rank = torch.argsort(items, dim=-1, descending=True)[:, :n]
-        idcg = (items[perfect_rank] / j).sum()
+        idcg = (torch.gather(items, 1, perfect_rank) / j).sum(-1)
         ndcg = dcg / idcg
-        return ndcg
+        return ndcg.mean()
 
     @staticmethod
     def recall_at_n(items_predicted, items, n=5):
         items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
         items_rank = items_rank[:, :n]
-        recall = items[items_rank].sum() / items.sum()
-        return recall
+        recall = torch.gather(items, 1, items_rank).sum(-1) / items.sum(-1)
+        return recall.mean()
 
     # def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_idx, optimizer_closure, on_tpu, using_native_amp,
     #                   using_lbfgs):
