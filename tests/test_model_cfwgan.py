@@ -115,6 +115,14 @@ class MyTestCase(unittest.TestCase):
         ndcg = CFWGAN.ndcg(items_predicted, items, n=4).item()
         self.assertAlmostEqual(ndcg, real_ndcg)
 
+        items_predicted = torch.tensor([[1, 0.9, 0.8, 0.7, 0], [0, 0.1, 0.2, 0.3, 1]])
+        items = torch.tensor([[0, 0, 0, 0, 0], [1, 0, 1.0, 0, 1]])
+        real_ndcg = (1 / log2(2) + 0 / log2(3) + 1 / log2(4) + 0 / log2(5)) / (
+                    1 / log2(2) + 1 / log2(3) + 1 / log2(4) + 0 / log2(5))
+
+        ndcg = CFWGAN.ndcg(items_predicted, items, n=4).item()
+        self.assertAlmostEqual(ndcg, real_ndcg)
+
     def test_recall_at_n(self):
         items_predicted = torch.tensor([[1, 0.9, 0.8, 0.7, 0], [0, 0.1, 0.2, 0.3, 1]])
         items = torch.tensor([[0, 1, 0, 1.0, 0], [1, 0, 1, 0, 1]])
@@ -125,6 +133,12 @@ class MyTestCase(unittest.TestCase):
 
         real_recall = (1/2 + 2/3)/2
         recall = CFWGAN.recall_at_n(items_predicted, items, n=3).item()
+        self.assertAlmostEqual(recall, real_recall)
+
+        items_predicted = torch.tensor([[1, 0.9, 0.8, 0.7, 0], [0, 0.1, 0.2, 0.3, 1]])
+        items = torch.tensor([[0, 0, 0, 0, 0], [1, 0, 1.0, 0, 1]])
+        real_recall = 2/3
+        recall = CFWGAN.recall_at_n(items_predicted, items, n=4).item()
         self.assertAlmostEqual(recall, real_recall)
 
 

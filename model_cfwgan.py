@@ -216,9 +216,11 @@ class CFWGAN(pl.LightningModule):
 
     @staticmethod
     def ndcg(items_predicted, items, n=5):
+        w = items.sum(-1) > 0
+        items, items_predicted = items[w], items_predicted[w]
         items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
         items_rank = items_rank[:, :n]
-        j = torch.log2(torch.arange(start=2, end=n + 2, dtype=torch.float))
+        j = torch.log2(torch.arange(start=2, end=n + 2, dtype=torch.float, device=items.device))
         dcg = (torch.gather(items, 1, items_rank) / j).sum(-1)
         perfect_rank = torch.argsort(items, dim=-1, descending=True)[:, :n]
         idcg = (torch.gather(items, 1, perfect_rank) / j).sum(-1)
@@ -227,6 +229,8 @@ class CFWGAN(pl.LightningModule):
 
     @staticmethod
     def recall_at_n(items_predicted, items, n=5):
+        w = items.sum(-1) > 0
+        items, items_predicted = items[w], items_predicted[w]
         items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
         items_rank = items_rank[:, :n]
         recall = torch.gather(items, 1, items_rank).sum(-1) / items.sum(-1)
