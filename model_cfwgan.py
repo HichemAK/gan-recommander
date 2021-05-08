@@ -48,9 +48,9 @@ class Generator(nn.Module):
     def __init__(self, num_items, hidden_size, num_hidden_layers):
         super().__init__()
         self.mlp_repeat = nn.Sequential(
-            nn.Linear(num_items, 512),
+            nn.Linear(num_items, 256),
             nn.ReLU(True),
-            nn.Linear(512, 512),
+            nn.Linear(256, 512),
             nn.ReLU(True),
             nn.Linear(512, 1024),
             nn.ReLU(True),
