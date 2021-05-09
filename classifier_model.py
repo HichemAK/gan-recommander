@@ -11,10 +11,10 @@ class Classifier(nn.Module):
     def __init__(self, num_items, p=0.8):
         super().__init__()
         self.mlp_tower = nn.Sequential(
-            nn.Linear(num_items, 256),
+            nn.Linear(num_items, 512),
             nn.Dropout(p),
             nn.ReLU(True),
-            nn.Linear(256, num_items),
+            nn.Linear(512, num_items),
         )
 
     def forward(self, item_full):
@@ -80,7 +80,7 @@ class Model(pl.LightningModule):
         self.log('ndcg_at_20', ndcg_at_20, prog_bar=True, on_step=False, on_epoch=True)
 
     def configure_optimizers(self):
-        opt = torch.optim.Adam(self.classifier.parameters(), lr=0.0001, weight_decay=0.00001)
+        opt = torch.optim.Adam(self.classifier.parameters(), lr=0.001, weight_decay=0.00001)
         return opt
 
     @staticmethod
