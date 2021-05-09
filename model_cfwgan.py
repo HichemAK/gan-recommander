@@ -124,7 +124,7 @@ class CFWGAN(pl.LightningModule):
         opt_g, opt_d = self.optimizers(use_pl_optimizer=True)
 
         items, idx = batch
-        # zr, k = self.negative_sampling(items)
+        zr, k = self.negative_sampling(items)
 
         # train discriminator
         # Measure discriminator's ability to classify real from generated samples
@@ -138,7 +138,7 @@ class CFWGAN(pl.LightningModule):
                                             grad_outputs=torch.ones_like(d_hat),
                                             create_graph=True, retain_graph=True, only_inputs=True)[0]
             gradients_norm = gradients.norm(2, dim=-1)
-            d_loss = torch.mean(self.discriminator(fake_data, items) - self.discriminator(items, items)
+            d_loss = torch.mean(self.discriminator(fake_data * items, items) - self.discriminator(items, items)
                                 + self.lambd * (gradients_norm - 1) ** 2)
 
             self.log('d_loss', d_loss, prog_bar=True, on_step=True, on_epoch=False)
@@ -151,9 +151,9 @@ class CFWGAN(pl.LightningModule):
         else:
             # adversarial loss is binary cross-entropy
             generator_output = self.generator(items)
-            g_loss = torch.mean(-self.discriminator(generator_output, items))
+            g_loss = torch.mean(-self.discriminator(generator_output * items, items))
             if self.alpha != 0:
-                g_loss += self.alpha * torch.sum(((items - generator_output) ** 2)) / items.shape[0]
+                g_loss += self.alpha * torch.sum(((items - generator_output) ** 2) * zr) / items.shape[0]
             self.log('g_loss', g_loss, prog_bar=True, on_step=True, on_epoch=False)
             self.log('output_mean', generator_output.mean(), prog_bar=False, on_step=True, on_epoch=False)
             opt_g.zero_grad()
