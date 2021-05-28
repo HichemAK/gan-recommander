@@ -14,9 +14,8 @@ config = 'movielens-100k'
 
 dataset = MovieLensDataset('movielens/ml-100k/ratings.csv', item_based=False)
 print(dataset.matrix.shape)
-train, test = dataset.split_train_test(test_size=0.2)
-val_size = round(0.5*len(test))
-val, test = random_split(test, [val_size, len(test) - val_size])
+train, test = dataset.split_train_test(test_size=0.4)
+test, val = test.split_train_test(test_size=0.5)
 
 model = CFWGAN(train, dataset.item_count, alpha=0.1, s_zr=0.5, s_pm=0.5, d_steps=5, g_steps=1, config=config)
 

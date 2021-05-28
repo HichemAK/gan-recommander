@@ -85,8 +85,8 @@ class CFWGAN(pl.LightningModule):
     def __init__(self, trainset, num_items, alpha=0.04, s_zr=0.6, s_pm=0.6, g_steps=1, d_steps=1, lambd=10,
                  debug=False, config='movielens-100k'):
         super().__init__()
-        self.generator = Generator(num_items, config='movielens-100k')
-        self.discriminator = Discriminator(num_items, config='movielens-100k')
+        self.generator = Generator(num_items, config)
+        self.discriminator = Discriminator(num_items, config)
         self.g_steps = g_steps
         self.d_steps = d_steps
         self.alpha = alpha
@@ -166,7 +166,7 @@ class CFWGAN(pl.LightningModule):
         items, idx = batch
         train_items = self.trainset[idx.cpu()][0].to(items.device)
         generator_output = self.generator(train_items)
-        generator_output[torch.where(train_items == 1)] = -float('inf')
+        generator_output[torch.where(items == 0)] = -float('inf')
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
         recall_at_5 = CFWGAN.recall_at_n(generator_output, items, n=5)
         ndcg_at_5 = CFWGAN.ndcg(generator_output, items, n=5)
@@ -180,7 +180,7 @@ class CFWGAN(pl.LightningModule):
         items, idx = batch
         train_items = self.trainset[idx.cpu()][0].to(items.device)
         generator_output = self.generator(train_items)
-        generator_output[torch.where(train_items == 1)] = -float('inf')
+        generator_output[torch.where(items == 0)] = -float('inf')
 
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
         recall_at_5 = CFWGAN.recall_at_n(generator_output, items, n=5)
@@ -231,16 +231,3 @@ class CFWGAN(pl.LightningModule):
         items_rank = items_rank[:, :n]
         recall = torch.gather(items, 1, items_rank).sum(-1) / items.sum(-1)
         return recall.mean()
-
-    # def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_idx, optimizer_closure, on_tpu, using_native_amp,
-    #                   using_lbfgs):
-    #     # update generator opt every 2 steps
-    #     if optimizer_idx == 0:
-    #         if batch_idx % 2 == 0 :
-    #             optimizer.step(closure=optimizer_closure)
-    #             optimizer.zero_grad()
-    #     # update discriminator opt every 4 steps
-    #     elif optimizer_idx == 1:
-    #         if batch_idx % 4 == 0 :
-    #             optimizer.step(closure=optimizer_closure)
-    #             optimizer.zero_grad()
