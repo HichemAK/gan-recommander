@@ -45,10 +45,10 @@ class MLPRepeat(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, num_items, hidden_size, num_hidden_layers):
+    def __init__(self, num_items, config='movielens-100k'):
         super().__init__()
         self.mlp_repeat = nn.Sequential(
-            nn.Linear(num_items, 256),
+            nn.Linear(num_items, 256 if config == 'movielens-100k' else 512),
             nn.ReLU(True),
             nn.Linear(256, 512),
             nn.ReLU(True),
@@ -63,7 +63,7 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, num_items, num_hidden_layers):
+    def __init__(self, num_items, config='movielens-100k'):
         super().__init__()
         self.mlp_tower = nn.Sequential(
             nn.Linear(2 * num_items, 1024),
@@ -82,10 +82,10 @@ class Discriminator(nn.Module):
 
 class CFWGAN(pl.LightningModule):
     def __init__(self, trainset, num_items, alpha=0.04, s_zr=0.6, s_pm=0.6, g_steps=1, d_steps=1, lambd=10,
-                 debug=False):
+                 debug=False, config='movielens-100k'):
         super().__init__()
-        self.generator = Generator(num_items, 256, 3)
-        self.discriminator = Discriminator(num_items, 3)
+        self.generator = Generator(num_items, config='movielens-100k')
+        self.discriminator = Discriminator(num_items, config='movielens-100k')
         self.g_steps = g_steps
         self.d_steps = d_steps
         self.alpha = alpha
@@ -202,17 +202,12 @@ class CFWGAN(pl.LightningModule):
 
     @staticmethod
     def precision_at_n(items_predicted, items, n=5):
-        div = items.sum(-1)
-        div, _ = torch.stack([div, torch.ones_like(div) * n]).min(0)
-        where = torch.where(div > 0)
-        items, items_predicted, div = items[where], items_predicted[where], div[where]
+        w = items.sum(-1) > 0
+        items, items_predicted = items[w], items_predicted[w]
         items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
         items_rank = items_rank[:, :n]
-        precision = items[
-            torch.repeat_interleave(torch.arange(items.shape[0]), n).to(items_rank.device).view(*items_rank.shape),
-            items_rank].float()
-        precision = (precision.sum(-1) / div).mean()
-        return precision
+        precision = torch.gather(items, 1, items_rank).sum(-1) / n
+        return precision.mean()
 
     @staticmethod
     def ndcg(items_predicted, items, n=5):

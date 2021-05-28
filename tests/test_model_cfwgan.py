@@ -25,7 +25,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(l, [(16, 12), (12, 12), (12, 12), (12, 8)])
 
     def test_generator(self):
-        model = Generator(50, 60, 3)
+        model = Generator(50)
         x = torch.tensor(np.random.rand(8, 50)).float()
         out = model(x)
         self.assertEqual(out.shape, (8, 50))
@@ -48,24 +48,24 @@ class MyTestCase(unittest.TestCase):
         precision = CFWGAN.precision_at_n(items_predicted, items, n=3)
         self.assertAlmostEqual(precision, (1 / 3 + 2 / 3 + 2 / 3) / 3)
 
-    def test_precision_at_n_few_pos(self):
-        items = torch.tensor([[0, 1, 0, 0, 0, 1],
-                              [0, 0, 0, 1, 0, 1],
-                              [0, 0, 1, 0, 1, 1]])
-        items_predicted = torch.tensor([[1.2, 3, 2, 1.1, 1.8, 2.1],
-                                        [0.26514016, 0.25176894, 0.41136022, 0.39306909, 0.13250113, 0.84741624],
-                                        [0.14425929, 0.2018705, 0.15223548, 0.73594551, 0.76860745, 0.70887101]])
-        precision = CFWGAN.precision_at_n(items_predicted, items, n=3)
-        self.assertAlmostEqual(precision.item(), (2 / 2 + 2 / 2 + 2 / 3) / 3)
-
-        items = torch.tensor([[0, 1, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0],
-                              [0, 0, 1, 0, 1, 1]])
-        items_predicted = torch.tensor([[1.2, 3, 2, 1.1, 1.8, 2.1],
-                                        [0.26514016, 0.25176894, 0.41136022, 0.39306909, 0.13250113, 0.84741624],
-                                        [0.14425929, 0.2018705, 0.15223548, 0.73594551, 0.76860745, 0.70887101]])
-        precision = CFWGAN.precision_at_n(items_predicted, items, n=3)
-        self.assertAlmostEqual(precision.item(), (1 / 1 + 2 / 3) / 2)
+    # def test_precision_at_n_few_pos(self):
+    #     items = torch.tensor([[0, 1, 0, 0, 0, 1],
+    #                           [0, 0, 0, 1, 0, 1],
+    #                           [0, 0, 1, 0, 1, 1]])
+    #     items_predicted = torch.tensor([[1.2, 3, 2, 1.1, 1.8, 2.1],
+    #                                     [0.26514016, 0.25176894, 0.41136022, 0.39306909, 0.13250113, 0.84741624],
+    #                                     [0.14425929, 0.2018705, 0.15223548, 0.73594551, 0.76860745, 0.70887101]])
+    #     precision = CFWGAN.precision_at_n(items_predicted, items, n=3)
+    #     self.assertAlmostEqual(precision.item(), (2 / 2 + 2 / 2 + 2 / 3) / 3)
+    #
+    #     items = torch.tensor([[0, 1, 0, 0, 0, 0],
+    #                           [0, 0, 0, 0, 0, 0],
+    #                           [0, 0, 1, 0, 1, 1]])
+    #     items_predicted = torch.tensor([[1.2, 3, 2, 1.1, 1.8, 2.1],
+    #                                     [0.26514016, 0.25176894, 0.41136022, 0.39306909, 0.13250113, 0.84741624],
+    #                                     [0.14425929, 0.2018705, 0.15223548, 0.73594551, 0.76860745, 0.70887101]])
+    #     precision = CFWGAN.precision_at_n(items_predicted, items, n=3)
+    #     self.assertAlmostEqual(precision.item(), (1 / 1 + 2 / 3) / 2)
 
     def test_negative_sampling(self):
         class Test:
