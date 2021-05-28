@@ -10,12 +10,12 @@ import pytorch_lightning as pl
 pl.seed_everything(12323)
 
 batch_size = 32
+config = 'movielens-100k'
 
-dataset = MovieLensDataset('movielens/ml-1m/ratings.dat', item_based=False)
+dataset = MovieLensDataset('movielens/ml-100k/ratings.csv', item_based=False)
 print(dataset.matrix.shape)
-train, test = dataset.split_train_test(test_size=0.2)
-val_size = round(0.1*len(test))
-val, test = random_split(test, [val_size, len(test) - val_size])
+train, test = dataset.split_train_test(test_size=0.4)
+test, val = test.split_train_test(test_size=0.5)
 
 model = Model(train, dataset.item_count)
 
