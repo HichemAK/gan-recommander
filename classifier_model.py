@@ -8,13 +8,14 @@ import torch
 from torch import nn
 
 class Classifier(nn.Module):
-    def __init__(self, num_items, p=0.8):
+    def __init__(self, num_items, p=0.8, config='movielens-100k'):
         super().__init__()
+        n = 256 if config == 'movielens-100k' else 512
         self.mlp_tower = nn.Sequential(
-            nn.Linear(num_items, 512),
+            nn.Linear(num_items, n),
             nn.Dropout(p),
             nn.ReLU(True),
-            nn.Linear(512, num_items),
+            nn.Linear(n, num_items),
         )
 
     def forward(self, item_full):

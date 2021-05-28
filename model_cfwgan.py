@@ -47,10 +47,11 @@ class MLPRepeat(nn.Module):
 class Generator(nn.Module):
     def __init__(self, num_items, config='movielens-100k'):
         super().__init__()
+        n = 256 if config == 'movielens-100k' else 512
         self.mlp_repeat = nn.Sequential(
-            nn.Linear(num_items, 256 if config == 'movielens-100k' else 512),
+            nn.Linear(num_items, n),
             nn.ReLU(True),
-            nn.Linear(256, 512),
+            nn.Linear(n, 512),
             nn.ReLU(True),
             nn.Linear(512, 1024),
             nn.ReLU(True),
