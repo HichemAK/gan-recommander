@@ -87,22 +87,17 @@ class Model(pl.LightningModule):
         self.log('ndcg_at_20', ndcg_at_20, prog_bar=True, on_step=False, on_epoch=True)
 
     def configure_optimizers(self):
-        opt = torch.optim.Adam(self.classifier.parameters(), lr=0.001, weight_decay=0.00001)
+        opt = torch.optim.Adam(self.classifier.parameters(), lr=0.0001, weight_decay=0.00001)
         return opt
 
     @staticmethod
     def precision_at_n(items_predicted, items, n=5):
-        div = items.sum(-1)
-        div, _ = torch.stack([div, torch.ones_like(div) * n]).min(0)
-        where = torch.where(div > 0)
-        items, items_predicted, div = items[where], items_predicted[where], div[where]
+        w = items.sum(-1) > 0
+        items, items_predicted = items[w], items_predicted[w]
         items_rank = torch.argsort(items_predicted, dim=-1, descending=True)
         items_rank = items_rank[:, :n]
-        precision = items[
-            torch.repeat_interleave(torch.arange(items.shape[0]), n).to(items_rank.device).view(*items_rank.shape),
-            items_rank].float()
-        precision = (precision.sum(-1) / div).mean()
-        return precision
+        precision = torch.gather(items, 1, items_rank).sum(-1) / n
+        return precision.mean()
 
     @staticmethod
     def ndcg(items_predicted, items, n=5):

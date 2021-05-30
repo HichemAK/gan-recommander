@@ -6,7 +6,6 @@ from dataset2 import MovieLensDataset
 import torch
 import pytorch_lightning as pl
 
-
 pl.seed_everything(12323)
 
 batch_size = 32
@@ -25,6 +24,7 @@ model_checkpoint = ModelCheckpoint(monitor='ndcg_at_5', save_top_k=5, save_weigh
 trainer = pl.Trainer(max_epochs=1000, callbacks=[model_checkpoint], log_every_n_steps=5,
                      )
 trainer.fit(model, DataLoader(train, batch_size, shuffle=True), DataLoader(val, batch_size*2))
-model = Model.load_from_checkpoint(model_checkpoint.best_model_path, trainset=train, num_items=dataset.item_count)
+model = Model.load_from_checkpoint(model_checkpoint.best_model_path, trainset=train, valset=val, testset=test,
+                                   num_items=dataset.item_count)
 trainer.test(model, DataLoader(test, batch_size*2))
 
