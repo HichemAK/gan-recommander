@@ -23,11 +23,13 @@ class Classifier(nn.Module):
 
 
 class Model(pl.LightningModule):
-    def __init__(self, trainset, num_items):
+    def __init__(self, trainset, valset, testset, num_items):
         super().__init__()
         self.classifier = Classifier(num_items)
         self.criterion = torch.nn.BCEWithLogitsLoss()
         self.trainset = trainset
+        self.valset = valset
+        self.testset = testset
         self.automatic_optimization = False
 
     def forward(self, item_full):
@@ -51,8 +53,10 @@ class Model(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         items, idx = batch
         train_items = self.trainset[idx.cpu()][0].to(items.device)
+        test_items = self.testset[idx.cpu()][0].to(items.device)
         output = self.classifier(train_items)
         output[torch.where(train_items == 1)] = -float('inf')
+        output[torch.where(test_items == 1)] = -float('inf')
         precision_at_5 = Model.precision_at_n(output, items, n=5)
         recall_at_5 = Model.recall_at_n(output, items, n=5)
         ndcg_at_5 = Model.ndcg(output, items, n=5)
@@ -63,8 +67,10 @@ class Model(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         items, idx = batch
         train_items = self.trainset[idx.cpu()][0].to(items.device)
+        val_items = self.valset[idx.cpu()][0].to(items.device)
         output = self.classifier(train_items)
         output[torch.where(train_items == 1)] = -float('inf')
+        output[torch.where(val_items == 1)] = -float('inf')
 
         precision_at_5 = Model.precision_at_n(output, items, n=5)
         recall_at_5 = Model.recall_at_n(output, items, n=5)
