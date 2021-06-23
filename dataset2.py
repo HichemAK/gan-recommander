@@ -8,10 +8,11 @@ import torch
 from scipy import sparse
 from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import Dataset
+import json
 
 
 class MovieLensDataset(Dataset):
-    def __init__(self, path, item_based=False):
+    def __init__(self, path, item_based=False, save_le=False):
         with open(path, 'r') as file:
             s = file.readline()
         sep = ','
@@ -24,6 +25,14 @@ class MovieLensDataset(Dataset):
         self.user_le = LabelEncoder()
         df['userId'] = self.user_le.fit_transform(df['userId'])
         df['movieId'] = self.movie_le.fit_transform(df['movieId'])
+        if save_le:
+            user_d = {i : x.item() for i, x in enumerate(self.user_le.classes_)}
+            movie_d = {i: x.item() for i, x in enumerate(self.movie_le.classes_)}
+            with open('user_dict.json', 'w') as f:
+                f.write(json.dumps(user_d))
+            with open('movie_dict.json', 'w') as f:
+                f.write(json.dumps(movie_d))
+
         self.dataframe = df
 
         row, column, data = df['userId'], df['movieId'], np.ones(len(df))

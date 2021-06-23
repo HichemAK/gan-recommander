@@ -12,7 +12,8 @@ pl.seed_everything(12323)
 batch_size = 32
 config = 'movielens-100k'
 
-dataset = MovieLensDataset('movielens/ml-100k/ratings.csv', item_based=False)
+dataset = MovieLensDataset('movielens/ml-25m/ratings.dat', item_based=False, save_le=False)
+exit()
 print(dataset.matrix.shape)
 train, test = dataset.split_train_test(test_size=0.4)
 test, val = test.split_train_test(test_size=0.5)
