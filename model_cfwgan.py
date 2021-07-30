@@ -167,10 +167,11 @@ class CFWGAN(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         items, idx = batch
         train_items = self.trainset[idx.cpu()][0].to(items.device)
-        test_items = self.testset[idx.cpu()][0].to(items.device)
+        test_items = self.testset[idx.cpu()][0].to(items.device) if self.testset is not None else None
         generator_output = self.generator(train_items)
         generator_output[torch.where(train_items == 1)] = -float('inf')
-        generator_output[torch.where(test_items == 1)] = -float('inf')
+        if self.testset is not None:
+            generator_output[torch.where(test_items == 1)] = -float('inf')
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
         recall_at_5 = CFWGAN.recall_at_n(generator_output, items, n=5)
         ndcg_at_5 = CFWGAN.ndcg(generator_output, items, n=5)
@@ -183,11 +184,11 @@ class CFWGAN(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         items, idx = batch
         train_items = self.trainset[idx.cpu()][0].to(items.device)
-        val_items = self.valset[idx.cpu()][0].to(items.device)
-        generator_output = self.classifier(train_items)
+        val_items = self.valset[idx.cpu()][0].to(items.device) if self.testset is not None else None
+        generator_output = self.generator(train_items)
         generator_output[torch.where(train_items == 1)] = -float('inf')
-        generator_output[torch.where(val_items == 1)] = -float('inf')
-
+        if self.testset is not None:
+            generator_output[torch.where(val_items == 1)] = -float('inf')
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
         recall_at_5 = CFWGAN.recall_at_n(generator_output, items, n=5)
         ndcg_at_5 = CFWGAN.ndcg(generator_output, items, n=5)
