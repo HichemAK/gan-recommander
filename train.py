@@ -22,7 +22,7 @@ model = CFWGAN(train, test, None, dataset.item_count, alpha=0.1, s_zr=0.5, s_pm=
 model_checkpoint = ModelCheckpoint(monitor='ndcg_at_5', save_top_k=5, save_weights_only=True, mode='max',
                                    filename='model-{step}-{ndcg_at_5:.4f}')
 
-trainer = pl.Trainer(max_epochs=700, callbacks=[model_checkpoint], log_every_n_steps=5,
+trainer = pl.Trainer(max_epochs=2, callbacks=[model_checkpoint], log_every_n_steps=5,
                      )
 trainer.fit(model, DataLoader(train, batch_size, shuffle=True), DataLoader(test, batch_size * 2))
 model = CFWGAN.load_from_checkpoint(model_checkpoint.best_model_path, trainset=train, valset=test, testset=None,

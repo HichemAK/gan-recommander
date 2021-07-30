@@ -45,36 +45,42 @@ class MLPRepeat(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, num_items, config='movielens-100k'):
+    def __init__(self, num_items, config='movielens-100k', custom_mlp=None):
         super().__init__()
         n = 256 if config == 'movielens-100k' else 512
-        self.mlp_repeat = nn.Sequential(
-            nn.Linear(num_items, n),
-            nn.ReLU(True),
-            nn.Linear(n, 512),
-            nn.ReLU(True),
-            nn.Linear(512, 1024),
-            nn.ReLU(True),
-            nn.Linear(1024, num_items),
-            nn.Sigmoid()
-        )
+        if custom_mlp is not None:
+            self.mlp_repeat = custom_mlp
+        else:
+            self.mlp_repeat = nn.Sequential(
+                nn.Linear(num_items, n),
+                nn.ReLU(True),
+                nn.Linear(n, 512),
+                nn.ReLU(True),
+                nn.Linear(512, 1024),
+                nn.ReLU(True),
+                nn.Linear(1024, num_items),
+                nn.Sigmoid()
+            )
 
     def forward(self, items):
         return self.mlp_repeat(items)
 
 
 class Discriminator(nn.Module):
-    def __init__(self, num_items, config='movielens-100k'):
+    def __init__(self, num_items, config='movielens-100k', custom_mlp=None):
         super().__init__()
-        self.mlp_tower = nn.Sequential(
-            nn.Linear(2 * num_items, 1024),
-            nn.ReLU(True),
-            nn.Linear(1024, 128),
-            nn.ReLU(True),
-            nn.Linear(128, 16),
-            nn.ReLU(True),
-            nn.Linear(16, 1),
-        )
+        if custom_mlp is not None:
+            self.mlp_tower = custom_mlp
+        else:
+            self.mlp_tower = nn.Sequential(
+                nn.Linear(2 * num_items, 1024),
+                nn.ReLU(True),
+                nn.Linear(1024, 128),
+                nn.ReLU(True),
+                nn.Linear(128, 16),
+                nn.ReLU(True),
+                nn.Linear(16, 1),
+            )
 
     def forward(self, generator_output, item_full):
         x = torch.cat([generator_output, item_full], dim=-1)
@@ -82,11 +88,12 @@ class Discriminator(nn.Module):
 
 
 class CFWGAN(pl.LightningModule):
-    def __init__(self, trainset, valset, testset, num_items, alpha=0.04, s_zr=0.6, s_pm=0.6, g_steps=1, d_steps=1, lambd=10,
-                 debug=False, config='movielens-100k'):
+    def __init__(self, trainset, valset, testset, num_items, alpha=0.1, s_zr=0.5, s_pm=0.5, g_steps=1, d_steps=5,
+                 lambd=10, lrs=(0.0001, 0.0001), weight_decays=(0, 0), debug=False, config='movielens-100k', custom_mlps=None):
         super().__init__()
-        self.generator = Generator(num_items, config)
-        self.discriminator = Discriminator(num_items, config)
+        custom_g, custom_d = custom_mlps if custom_mlps is not None else (None, None)
+        self.generator = Generator(num_items, config, custom_mlp=custom_g)
+        self.discriminator = Discriminator(num_items, config, custom_mlp=custom_d)
         self.g_steps = g_steps
         self.d_steps = d_steps
         self.alpha = alpha
@@ -98,6 +105,8 @@ class CFWGAN(pl.LightningModule):
         self.debug = debug
         self.step_gd = 0
         self.lambd = lambd
+        self.lr_g, self.lr_d = lrs
+        self.weight_decay_g, self.weight_decay_d = weight_decays
         self.automatic_optimization = False
 
     def forward(self, item_full):
@@ -204,8 +213,9 @@ class CFWGAN(pl.LightningModule):
         self.log('ndcg_at_20', ndcg_at_20, prog_bar=True, on_step=False, on_epoch=True)
 
     def configure_optimizers(self):
-        opt_g = torch.optim.Adam(self.generator.parameters(), lr=0.0001, betas=(0, 0.9))
-        opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=0.0001, betas=(0, 0.9))
+        opt_g = torch.optim.Adam(self.generator.parameters(), lr=self.lr_g, betas=(0, 0.9), weight_decay=self.weight_decay_g)
+        opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr_d, betas=(0, 0.9),
+                                 weight_decay=self.weight_decay_d)
         return [opt_g, opt_d], []
 
     @staticmethod
