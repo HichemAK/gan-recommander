@@ -82,7 +82,7 @@ class Discriminator(nn.Module):
 
 
 class CFWGAN(pl.LightningModule):
-    def __init__(self, trainset, num_items, alpha=0.04, s_zr=0.6, s_pm=0.6, g_steps=1, d_steps=1, lambd=10,
+    def __init__(self, trainset, valset, testset, num_items, alpha=0.04, s_zr=0.6, s_pm=0.6, g_steps=1, d_steps=1, lambd=10,
                  debug=False, config='movielens-100k'):
         super().__init__()
         self.generator = Generator(num_items, config)
@@ -93,6 +93,8 @@ class CFWGAN(pl.LightningModule):
         self.s_zr = s_zr
         self.s_pm = s_pm
         self.trainset = trainset
+        self.valset = valset
+        self.testset = testset
         self.debug = debug
         self.step_gd = 0
         self.lambd = lambd
@@ -165,8 +167,10 @@ class CFWGAN(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         items, idx = batch
         train_items = self.trainset[idx.cpu()][0].to(items.device)
+        test_items = self.testset[idx.cpu()][0].to(items.device)
         generator_output = self.generator(train_items)
-        generator_output[torch.where(items == 0)] = -float('inf')
+        generator_output[torch.where(train_items == 1)] = -float('inf')
+        generator_output[torch.where(test_items == 1)] = -float('inf')
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
         recall_at_5 = CFWGAN.recall_at_n(generator_output, items, n=5)
         ndcg_at_5 = CFWGAN.ndcg(generator_output, items, n=5)
@@ -179,8 +183,10 @@ class CFWGAN(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         items, idx = batch
         train_items = self.trainset[idx.cpu()][0].to(items.device)
-        generator_output = self.generator(train_items)
-        generator_output[torch.where(items == 0)] = -float('inf')
+        val_items = self.valset[idx.cpu()][0].to(items.device)
+        generator_output = self.classifier(train_items)
+        generator_output[torch.where(train_items == 1)] = -float('inf')
+        generator_output[torch.where(val_items == 1)] = -float('inf')
 
         precision_at_5 = CFWGAN.precision_at_n(generator_output, items, n=5)
         recall_at_5 = CFWGAN.recall_at_n(generator_output, items, n=5)
