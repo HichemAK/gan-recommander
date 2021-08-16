@@ -14,17 +14,16 @@ config = 'movielens-100k'
 dataset = MovieLensDataset('movielens/ml-100k/ratings.csv', item_based=False)
 print(dataset.matrix.shape)
 train, test = dataset.split_train_test(test_size=0.2)
-train, val = train.split_train_test(test_size=0.2)
 
-model = Model(train, val, test, dataset.item_count)
+model = Model(train, test, None, dataset.item_count)
 
 model_checkpoint = ModelCheckpoint(monitor='ndcg_at_5', save_top_k=5, save_weights_only=True, mode='max',
                                    filename='model-{step}-{ndcg_at_5:.4f}')
 
 trainer = pl.Trainer(max_epochs=1000, callbacks=[model_checkpoint], log_every_n_steps=5,
                      )
-trainer.fit(model, DataLoader(train, batch_size, shuffle=True), DataLoader(val, batch_size*2))
-model = Model.load_from_checkpoint(model_checkpoint.best_model_path, trainset=train, valset=val, testset=test,
+trainer.fit(model, DataLoader(train, batch_size, shuffle=True), DataLoader(test, batch_size*2))
+model = Model.load_from_checkpoint(model_checkpoint.best_model_path, trainset=train, valset=test, testset=test,
                                    num_items=dataset.item_count)
 trainer.test(model, DataLoader(test, batch_size*2))
 

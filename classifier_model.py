@@ -53,10 +53,11 @@ class Model(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         items, idx = batch
         train_items = self.trainset[idx.cpu()][0].to(items.device)
-        test_items = self.testset[idx.cpu()][0].to(items.device)
+        test_items = self.testset[idx.cpu()][0].to(items.device) if self.testset is not None else None
         output = self.classifier(train_items)
         output[torch.where(train_items == 1)] = -float('inf')
-        output[torch.where(test_items == 1)] = -float('inf')
+        if self.testset is not None:
+            output[torch.where(test_items == 1)] = -float('inf')
         precision_at_5 = Model.precision_at_n(output, items, n=5)
         recall_at_5 = Model.recall_at_n(output, items, n=5)
         ndcg_at_5 = Model.ndcg(output, items, n=5)
@@ -67,10 +68,11 @@ class Model(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         items, idx = batch
         train_items = self.trainset[idx.cpu()][0].to(items.device)
-        val_items = self.valset[idx.cpu()][0].to(items.device)
+        val_items = self.valset[idx.cpu()][0].to(items.device) if self.testset is not None else None
         output = self.classifier(train_items)
         output[torch.where(train_items == 1)] = -float('inf')
-        output[torch.where(val_items == 1)] = -float('inf')
+        if self.testset is not None:
+            output[torch.where(val_items == 1)] = -float('inf')
 
         precision_at_5 = Model.precision_at_n(output, items, n=5)
         recall_at_5 = Model.recall_at_n(output, items, n=5)

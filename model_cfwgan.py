@@ -139,8 +139,6 @@ class CFWGAN(pl.LightningModule):
         zr, k = self.negative_sampling(items)
 
         # train discriminator
-        # Measure discriminator's ability to classify real from generated samples
-        # discriminator loss is the average of these
         if self.step_gd % (self.g_steps + self.d_steps) >= self.g_steps:
             fake_data = self.generator(items)
             epsilon = torch.rand(items.shape[0], 1, device=items.device)
